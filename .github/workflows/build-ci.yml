@@ -52,7 +52,15 @@ env:
   COLUMNS: time,version,commit,variant,size,download
   REFRESH_SCRIPT: scripts/ci-refresh-page.sh
   # 产物门禁
-  EXPECT_PACKAGE: com.eltavine.duckdetector
+  # fork 包名：加 `.fork` 后缀与上游原版并存安装（同 Mishka.F 的做法）。namespace 保持上游不变 ——
+  #   `.MainActivity` 这类相对名与 R 类都按 namespace 解析，改它会让包能装但一开就崩
+  EXPECT_PACKAGE: com.eltavine.duckdetector.fork
+  # 版本号自己定，不跟上游的「日期 + 提交数」：versionName 是常量、versionCode = 基数 + 运行序号。
+  #   提交数会被 squash 合并拉低 ⇒ 拿它当 versionCode 会导致降级装机，故改用单调的 run_number
+  CI_VERSION_NAME: '1.0.0'
+  CI_VERSION_CODE_BASE: '5000'
+  # manifest 里的 launcher activity 是 NativeActivity（启动壳），不是 .MainActivity
+  EXPECT_ACTIVITY: android.app.NativeActivity
   # manifest 里的 launcher activity 是 NativeActivity（启动壳），不是 .MainActivity
   EXPECT_ACTIVITY: android.app.NativeActivity
   # fork 用自己那把发布钥（Vstory.jks，别名 Vstory）签名 —— 指纹取法：keytool -list -v
@@ -103,24 +111,24 @@ jobs:
         run: |
           set -euo pipefail
           echo "short=$(git rev-parse --short=8 HEAD)" >> "$GITHUB_OUTPUT"
-          echo "ts=$(TZ=Asia/Shanghai date +%Y%m%d-%H%M)" >> "$GITHUB_OUTPUT"
 
-      # 版本号与产物名的唯一来源。都从 git 算，与 build-logic 的 ValueSource 同一算法：
-      #   versionName = <Asia/Singapore 当天日期>.<MM>.<dd>-<12 位短 hash>
-      #   versionCode = git rev-list --count HEAD
-      # 命名：<前缀>_<版本>.<code>_<时间>_ci-<变体>_<短号>.apk
-      #   滚动页刷新器从右往左按 `_` 取段 ⇒ 版本段里的点与连字符不会错位。
+      # 版本号与产物名的唯一来源。版本号是 fork 自己的规则，与上游无关：
+      #   versionName = CI_VERSION_NAME（常量）
+      #   versionCode = CI_VERSION_CODE_BASE + 本次 run_number（单调递增，不受 squash 拉低）
+      # 这两项经 ci-fork-patches.py 注入 build-logic（读同名环境变量），所以构建前必须导出。
+      # 命名：<前缀>_<版本名>_<版本代码>_<变体>_<短号>.apk —— 不带时间戳，靠短号区分不同提交
+      #   滚动页刷新器从右往左按 `_` 取段 ⇒ 版本段里的点不会错位。
       - name: Resolve APK name
         id: target
         env:
-          TS: ${{ steps.info.outputs.ts }}
           SHORT: ${{ steps.info.outputs.short }}
+          RUN_NUMBER: ${{ github.run_number }}
           WANT: ${{ inputs.variant }}
         run: |
           set -euo pipefail
-          VER="$(TZ=Asia/Singapore date +%Y.%m.%d)-$(git rev-parse --short=12 HEAD)"
-          CODE="$(git rev-list --count HEAD)"
-          [ -n "$VER" ] && [ -n "$CODE" ] || { echo "::error::读不到版本号"; exit 1; }
+          VER="$CI_VERSION_NAME"
+          CODE="$(( CI_VERSION_CODE_BASE + RUN_NUMBER ))"
+          [ -n "$VER" ] || { echo "::error::CI_VERSION_NAME 为空"; exit 1; }
 
           case "${WANT:-$PUSH_VARIANT}" in
             debug|release) VLIST="${WANT:-$PUSH_VARIANT}" ;;
@@ -138,7 +146,7 @@ jobs:
           done
 
           for v in $VLIST; do
-            N="${FORK_LABEL}_${VER}.${CODE}_${TS}_ci-${v}_${SHORT}.apk"
+            N="${FORK_LABEL}_${VER}_${CODE}_${v}_${SHORT}.apk"
             echo "APKNAME_$(printf '%s' "$v" | tr '[:lower:]' '[:upper:]')=${N}" >> "$GITHUB_ENV"
             echo "产物名（${v}）：${N}"
           done
@@ -178,6 +186,10 @@ jobs:
           echo "已按固定密钥配置签名"
 
       - name: Gradle build
+        env:
+          # build-logic 被 ci-fork-patches.py 改成读这两个变量；不传就退回上游的日期+提交数
+          CI_VERSION_NAME: ${{ env.CI_VERSION_NAME }}
+          CI_VERSION_CODE: ${{ env.CODE }}
         run: |
           set -euo pipefail
           chmod +x gradlew
@@ -212,7 +224,7 @@ jobs:
           done
 
           # 与 ci-refresh-page.sh 的 NAME_RE 同源，改命名规则必须两处同改
-          RE='^[A-Za-z0-9._-]+_[0-9]{8}-[0-9]{4}_ci-(debug|release)_[0-9a-f]{8}\.apk$'
+          RE="^[A-Za-z0-9._-]+_${CI_VERSION_NAME}_[0-9]+_(debug|release)_[0-9a-f]{8}\.apk$"
           apks=(dist/*.apk)
           want=$(wc -w <<< "$VARIANT_LIST")
           [ "${#apks[@]}" -eq "$want" ] || { echo "::error::应产出 $want 个包，实际 ${#apks[@]} 个"; exit 1; }
@@ -239,8 +251,8 @@ jobs:
           for APK in dist/*.apk; do
             NAME="$(basename "$APK")"
             case "$NAME" in
-              *_ci-debug_*.apk)   VAR=debug ;;
-              *_ci-release_*.apk) VAR=release ;;
+              *_debug_*.apk)   VAR=debug ;;
+              *_release_*.apk) VAR=release ;;
               *) echo "::error::$NAME 无法从文件名判定变体"; exit 1 ;;
             esac
             echo "════ 校验 $NAME（$VAR）"
@@ -254,10 +266,12 @@ jobs:
               || { echo "::error::$NAME 包名不是 ${EXPECT_PACKAGE}：$PKG_LINE"; exit 1; }
             printf '%s' "$BADGING" | grep -Fq "launchable-activity: name='${EXPECT_ACTIVITY}'" \
               || { echo "::error::$NAME 启动类不是 ${EXPECT_ACTIVITY}"; exit 1; }
+            # 版本号由 ci-fork-patches.py 注入 ⇒ 不符说明 patch 没生效，包还是上游那套日期+提交数，
+            #   装上会与已有版本打架
             printf '%s' "$PKG_LINE" | grep -Fq "versionCode='${CODE}'" \
-              || { echo "::error::$NAME 的 versionCode 与 git 提交数不符（期望 ${CODE}）：$PKG_LINE"; exit 1; }
+              || { echo "::error::$NAME 的 versionCode 不是注入值（期望 ${CODE}）：$PKG_LINE"; exit 1; }
             printf '%s' "$PKG_LINE" | grep -Fq "versionName='${VER}'" \
-              || { echo "::error::$NAME 的 versionName 与 git 不符（期望 ${VER}）：$PKG_LINE"; exit 1; }
+              || { echo "::error::$NAME 的 versionName 不是注入值（期望 ${VER}）：$PKG_LINE"; exit 1; }
             echo "  ✅ 包名 / 启动类 / 版本：${EXPECT_PACKAGE} ${VER}(${CODE})"
 
             DBG="$(printf '%s' "$BADGING" | grep -c "^application-debuggable$" || true)"

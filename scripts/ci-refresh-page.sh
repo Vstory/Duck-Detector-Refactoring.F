@@ -15,21 +15,22 @@
 #   CI_TAG        滚动页 tag，默认 ci
 #   PREFIX        产物名前缀，仅用于脚注文案
 #   KEEP_GROUPS   保留组数，默认 6
-#   COLUMNS       列集合与顺序，逗号分隔，默认 time,version,commit,variant,size,download
-#                 可用列：time version commit variant size download
+#   COLUMNS       列集合与顺序，逗号分隔，默认 version,commit,variant,size,download
+#                 可用列：version commit variant size download
 #   APKNAME_DEBUG / APKNAME_RELEASE   本次产物名（用于 ★ 标记；缺省则不标）
 #   RUN_ID / SERVER  可选，脚注里「★ = 本次构建」的 Actions run 链接
 #   FOOTER_EXTRA  可选，追加到脚注的 markdown 行（多行字符串）
 #   CAUTION       可选，覆盖正文顶部提示块；显式传空串则不写提示块
 #   WAIT_VISIBLE  默认 1；先轮询到本次产物在 API 可见再刷新（避免本轮缺自己那组）
 #   BODY_FILE     正文落盘位置，默认 /tmp/ci_page_body.md
-#   NAME_RE       资产名正则，默认 ^[A-Za-z0-9._-]+_[0-9]{8}-[0-9]{4}_ci-(debug|release)_[0-9a-f]{8}\.apk$
-#   VARIANT_RE    变体段正则，默认 ^ci-(debug|release)$
+#   NAME_RE       资产名正则，默认 ^[A-Za-z0-9._-]+_<版本名>_<版本代码>_(debug|release)_<8 位短号>\.apk$
+#   VARIANT_RE    变体段正则，默认 ^(debug|release)$
 #
 # 约定（改本脚本前先读 100_System/workflows/子流程/通用规范流程/GitHub域/CI滚动发布页流程.md）：
 #   · 正文**全量重建**，不在旧正文上追加 —— 重建的输入是页面上真实存在的资产列表，
 #     并发交错下每次产出都是「当时可见的完整状态」，最终收敛；追加式会丢对方的行。
-#   · 组 = 时间戳|短号（不含变体）⇒ 同一次多变体算一组、页面占一行。
+#   · 组 = 版本代码|短号（不含变体）⇒ 同一次多变体算一组、页面占一行；版本代码即 run 序号，
+#     天然单调，正好当「新 → 旧」的排序键（产物名里没有时间戳）。
 #   · 保留 = 按组去重后取前 KEEP_GROUPS 组，其余资产删除。重复删同一资产返回 404 属并发正常。
 #   · 解析一律 awk -F'\t'，**不要**改回 `IFS=$'\t' read`：tab 属 IFS 空白字符，read 会合并
 #     连续分隔符并剥离首尾 ⇒ 空字段被整格吞掉、后面字段全体左移，页面静默显示错值。
@@ -39,17 +40,17 @@ set -euo pipefail
 CI_TAG="${CI_TAG:-ci}"
 PREFIX="${PREFIX:-}"
 KEEP_GROUPS="${KEEP_GROUPS:-6}"
-COLUMNS="${COLUMNS:-time,version,commit,variant,size,download}"
+COLUMNS="${COLUMNS:-version,commit,variant,size,download}"
 WAIT_VISIBLE="${WAIT_VISIBLE:-1}"
 BODY="${BODY_FILE:-/tmp/ci_page_body.md}"
 # ⚠️ 默认值不能写成 `${NAME_RE:-^...{8}...}`：正则里的区间量词 `{8}` 的 `}` 会**提前闭合**
 #   参数展开，默认值被截断成 `^...+_[0-9]{8-...`（静默变味、匹配全落空）。含 `{}` 的默认值
 #   一律走 if 分支赋单引号字面量。
 if [ -z "${NAME_RE:-}" ]; then
-  NAME_RE='^[A-Za-z0-9._-]+_[0-9]{8}-[0-9]{4}_ci-(debug|release)_[0-9a-f]{8}\.apk$'
+  NAME_RE='^[A-Za-z0-9._-]+_[0-9][0-9.]*_[0-9]+_(debug|release)_[0-9a-f]{8}\.apk$'
 fi
 if [ -z "${VARIANT_RE:-}" ]; then
-  VARIANT_RE='^ci-(debug|release)$'
+  VARIANT_RE='^(debug|release)$'
 fi
 
 HDR=(-H "Accept: application/vnd.github+json")
@@ -83,17 +84,17 @@ gh api --paginate "${HDR[@]}" "$REL_API" \
       # 按 `_` **从右往左**取段 ⇒ 版本名里含 `_` 也不会错位
       n=split(name, P, "_")
       if (n < 5) next
-      short=P[n]; var=P[n-1]; ts=P[n-2]; vc=P[n-3]
+      short=P[n]; var=P[n-1]; code=P[n-2]; ver=P[n-3]
       if (var !~ var_re) next
-      if (ts !~ /^[0-9]{8}-[0-9]{4}$/) next
+      if (code !~ /^[0-9]+$/) next
       if (short !~ /^[0-9a-f]{8}\.apk$/) next
-      sub(/^ci-/, "", var); sub(/\.apk$/, "", short)
+      sub(/\.apk$/, "", short)
       # 末列 = 组内序（debug 先）：同一组的两个变体共用一个组键，只按组键排会让 release
       #   排到 debug 前面，与脚注「排障优先用 debug」相反。
-      printf "%s|%s\t%s\t%s\t%s\t%s\t%s\t%d\n", ts, short, name, id, vc, var, size, (var == "debug" ? 0 : 1)
+      printf "%s|%s\t%s\t%s\t%s\t%s\t%s\t%d\n", code, short, name, id, ver, var, size, (var == "debug" ? 0 : 1)
     }' > "$SNAP"
 echo "匹配命名规则的 asset 共 $(wc -l < "$SNAP") 个"
-sort -t$'\t' -k1,1r -k7,7n "$SNAP" > "$SORTED"
+sort -t$'\t' -k1,1nr -k7,7n "$SNAP" > "$SORTED"
 
 awk -F'\t' -v k="$KEEP_GROUPS" '!seen[$1]++ { if (c++ >= k) exit; print $1 }' "$SORTED" > "$KEEPKEYS"
 echo "保留 $(wc -l < "$KEEPKEYS") 组 / 上限 ${KEEP_GROUPS} 组"
@@ -108,7 +109,7 @@ echo "保留 $(wc -l < "$KEEPKEYS") 组 / 上限 ${KEEP_GROUPS} 组"
     echo "> 需要正式版，请到 [Releases](https://github.com/${REPO}/releases) 找对应的版本页。"
   fi
   echo
-  echo "## 📥 最近构建（北京时间，新 → 旧）"
+  echo "## 📥 最近构建（新 → 旧）"
   echo
 } > "$BODY"
 
@@ -140,14 +141,10 @@ awk -F'\t' -v base="$BASE" -v cols="$COLUMNS" \
   }
   NR == FNR { keep[$1] = 1; next }
   {
-    key=$1; name=$2; id=$3; vc=$4; var=$5; size=$6
+    key=$1; name=$2; id=$3; ver=$4; var=$5; size=$6
     if (!(key in keep)) next
-    ts=key; short=key
-    sub(/\|.*$/, "", ts)          # 组键 = 时间戳|短号
-    sub(/^.*\|/, "", short)
-    pretty=substr(ts,1,4)"-"substr(ts,5,2)"-"substr(ts,7,2)" "substr(ts,10,2)":"substr(ts,12,2)
-    ver=vc;  sub(/\.[^.]*$/, "", ver)
-    code=vc; sub(/^.*\./, "", code)
+    code=key; sub(/\|.*$/, "", code)
+    short=key; sub(/^.*\|/, "", short)
     # ★ 标记「本次构建」所在行，固定在**第一列**前缀（换列序也不跑偏）
     mark = (name == w1 || name == w2) ? "★ " : ""
     line="|"
@@ -167,11 +164,11 @@ awk -F'\t' -v base="$BASE" -v cols="$COLUMNS" \
     echo "★ = 本次构建"
   fi
   echo
-  echo -n "文件名规则 = \`<前缀>_<版本>.<code>_<时间>_ci-<变体>_<短号>.apk\`"
+  echo -n "文件名规则 = \`<前缀>_<版本名>_<版本代码>_<变体>_<短号>.apk\`"
   [ -n "$PREFIX" ] && echo -n "（前缀 = ${PREFIX}）"
   echo -n "，短号 = 提交 SHA 前 8 位"
   case ",$COLUMNS," in *,commit,*) echo -n "（即表格「提交」列）" ;; esac
-  echo "。按时间戳追加、不覆盖旧包，本页只保留最近 ${KEEP_GROUPS} 组。"
+  echo "。版本代码随每次运行递增，本页只保留最近 ${KEEP_GROUPS} 组。"
   [ -n "${FOOTER_EXTRA:-}" ] && printf '%s\n' "$FOOTER_EXTRA"
   echo
   echo "本页地址**永久固定**（可收藏）—— GitHub 的 Release 列表按**创建时间**排列且无置顶机制，新版本发布后本页会下移。"

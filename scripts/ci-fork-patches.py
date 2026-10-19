@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply the fork's behavioural patches to the working tree, for the CI build only.
+"""Apply the fork's patches to the working tree, for the CI build only.
 
 Every patch is an assertion first and a rewrite second: when upstream changes the line a
 patch anchors on, this fails loudly instead of shipping a build that silently kept the
@@ -11,6 +11,11 @@ Patches:
   instead of a 30 second wait plus a scroll check plus an arithmetic answer.
 * the consent countdown's initial value - dropped to 0 so the retired timer logic in
   `AgreementScreen` does not keep recomposing the screen for 30 seconds.
+* the application id - suffixed with `.F` so this build installs alongside the upstream one.
+  The namespace stays untouched: it is what `.MainActivity` and the R class resolve against.
+* the version name and code - read from `CI_VERSION_NAME` / `CI_VERSION_CODE`, so CI ships its
+  own monotonic version instead of upstream's date-and-commit naming. Locally the variables
+  are absent and upstream's sources stay in charge.
 """
 
 from __future__ import annotations
@@ -23,9 +28,19 @@ from pathlib import Path
 
 PANEL_TARGET = "app/src/main/java/com/eltavine/duckdetector/startup/legal/AgreementConsentPanel.kt"
 PANEL_SOURCE = "fork/patches/AgreementConsentPanel.kt"
+APP_GRADLE = "app/build.gradle.kts"
+VERSION_FILE = "build-logic/src/main/kotlin/com/eltavine/duckdetector/buildlogic/DuckDetectorAndroidApplicationConventionPlugin.kt"
+
+PACKAGE_FROM = 'applicationId = "com.eltavine.duckdetector"'
+PACKAGE_TO = 'applicationId = "com.eltavine.duckdetector.fork"'
 
 COUNTDOWN_FROM = "var countdown by remember { mutableIntStateOf(30) }"
 COUNTDOWN_TO = "var countdown by remember { mutableIntStateOf(0) }"
+
+VERSION_CODE_FROM = "this.versionCode = versionCode.get()"
+VERSION_CODE_TO = 'this.versionCode = System.getenv("CI_VERSION_CODE")?.toIntOrNull() ?: versionCode.get()'
+VERSION_NAME_FROM = "this.versionName = versionName.get()"
+VERSION_NAME_TO = 'this.versionName = System.getenv("CI_VERSION_NAME") ?: versionName.get()'
 
 
 @dataclass(frozen=True)
@@ -73,12 +88,22 @@ def main() -> int:
 
     repo = Path(args.repo).resolve()
     screen = repo / "app/src/main/java/com/eltavine/duckdetector/startup/legal/AgreementScreen.kt"
-    if not screen.is_file():
-        print("::error::找不到 AgreementScreen.kt —— 协议页被移动或改名了", file=sys.stderr)
-        return 1
+    targets = {
+        "screen": screen,
+        "app": repo / APP_GRADLE,
+        "version": repo / VERSION_FILE,
+    }
+    for label, path in targets.items():
+        if not path.is_file():
+            print(f"::error::找不到 {path.relative_to(repo)} —— 上游移动或改名了", file=sys.stderr)
+            return 1
 
-    results: list[Result] = [copy_patch(repo, args.check)]
-    results.append(replace_once(screen, COUNTDOWN_FROM, COUNTDOWN_TO, args.check))
+    dry = args.check
+    results: list[Result] = [copy_patch(repo, dry)]
+    results.append(replace_once(targets["screen"], COUNTDOWN_FROM, COUNTDOWN_TO, dry))
+    results.append(replace_once(targets["app"], PACKAGE_FROM, PACKAGE_TO, dry))
+    results.append(replace_once(targets["version"], VERSION_CODE_FROM, VERSION_CODE_TO, dry))
+    results.append(replace_once(targets["version"], VERSION_NAME_FROM, VERSION_NAME_TO, dry))
 
     failures = [r for r in results if not r.changed]
     for result in results:
