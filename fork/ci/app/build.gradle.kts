@@ -1,0 +1,96 @@
+/*
+ * Copyright 2026 Duck Apps Contributor
+ * If you have any questions, suggestions, or other inquiries, please email Eltavine <me@eltavine.com>.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// fork 版：CI 构建时整份覆盖上游的 app/build.gradle.kts（见 scripts/ci-fork-overlay.py）。
+// 与上游的差异只有 defaultConfig 里的 applicationId / versionCode / versionName ——
+//   包名加 .fork 后缀以便与原版并存，版本号用 fork 自己的规则（CI 传 CI_VERSION_NAME /
+//   CI_VERSION_CODE）。namespace 保持上游不变：.MainActivity 与 R 类都按它解析。
+// 上游改了依赖或插件的部分，需要同步到这里。
+
+import com.eltavine.duckdetector.buildlogic.installer.registerInstallerCanaryAssets
+import com.eltavine.duckdetector.buildlogic.detectorModules
+import com.eltavine.duckdetector.buildlogic.generateDetectorCards
+
+plugins {
+    id("duckdetector.android.application")
+    id("duckdetector.android.apk-artifacts")
+}
+
+android {
+    namespace = "com.eltavine.duckdetector"
+
+    defaultConfig {
+        applicationId = System.getenv("CI_APPLICATION_ID") ?: "com.eltavine.duckdetector.fork"
+        versionCode = (System.getenv("CI_VERSION_CODE") ?: "5000").toInt()
+        versionName = System.getenv("CI_VERSION_NAME") ?: "1.0.0"
+    }
+}
+
+registerInstallerCanaryAssets(
+    rootProject.file("feature/rootmanagers/data/src/canary/AndroidManifest.xml"),
+    "rootmanagers/installer-canary.apk",
+)
+
+// Every detector's dashboard card, discovered like the ui modules the application depends on.
+generateDetectorCards(packageName = "com.eltavine.duckdetector.ui")
+
+dependencies {
+    implementation(libs.uihelper)
+    implementation(libs.miuix.ui)
+    implementation(libs.miuix.nav)
+    implementation(project(":core:navigation"))
+    implementation(project(":core:detector"))
+    implementation(project(":core:evidence"))
+    implementation(project(":core:scan"))
+    implementation(project(":core:ui"))
+    implementation(project(":core:designsystem"))
+    implementation(project(":feature:dashboard:presentation"))
+    implementation(project(":feature:dashboard:ui"))
+    implementation(project(":feature:deviceinfo:data"))
+    implementation(project(":feature:deviceinfo:domain"))
+    implementation(project(":feature:deviceinfo:ui"))
+    implementation(project(":feature:settings:presentation"))
+    implementation(project(":feature:settings:ui"))
+    implementation(project(":feature:update:data"))
+    implementation(project(":feature:update:domain"))
+    implementation(project(":feature:update:presentation"))
+    implementation(project(":feature:update:ui"))
+    implementation(project(":sdk:runtime"))
+    // Every detector's dashboard card, discovered like the SDK discovers the detectors.
+    detectorModules("ui").forEach { implementation(project(it)) }
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.material)
+    testImplementation(project(":core:report"))
+    testImplementation(project(":feature:deviceinfo:presentation"))
+    testImplementation(libs.bundles.test.unit)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(project(":core:report"))
+    androidTestImplementation(project(":feature:rootmanagers:data"))
+    androidTestImplementation(project(":feature:rootmanagers:domain"))
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    debugImplementation(libs.androidx.ui.tooling)
+}

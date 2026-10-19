@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Lay the fork's own source files over the working tree, for the CI build only.
+"""Lay the fork's own build and source files over the working tree, for the CI build only.
 
-Nothing is committed, so syncing upstream stays conflict-free. Build settings (application id,
-version, signing) are NOT here -- they come from fork/ci/fork.init.gradle plus environment
-variables, which leaves upstream's build files untouched.
+Nothing is committed, so syncing upstream stays conflict-free. The fork owns its own
+app/build.gradle.kts (package id + version); signing comes from the ANDROID_KEYSTORE_* env vars
+the upstream build-logic already reads, so no upstream build file is touched.
 """
 
 from __future__ import annotations
@@ -15,8 +15,7 @@ from pathlib import Path
 
 LEGAL = "app/src/main/java/com/eltavine/duckdetector/startup/legal"
 APP_GRADLE = "app/build.gradle.kts"
-# 追加而不是改写：上游这个文件的任何一行变动都不会让这段失效
-GRADLE_HOOK = '\napply(from = rootProject.file("fork/ci/fork.overrides.gradle"))\n'
+APP_GRADLE_SOURCE = "fork/ci/app/build.gradle.kts"
 PANEL_SOURCE = "fork/ci/AgreementConsentPanel.kt"
 PANEL_TARGET = f"{LEGAL}/AgreementConsentPanel.kt"
 
@@ -58,21 +57,22 @@ def main() -> int:
         print(f"::error::{SCREEN} 里找不到倒计时锚点 —— 上游改了写法，需回来同步", file=sys.stderr)
         return 1
 
-    gradle_file = repo / APP_GRADLE
-    if GRADLE_HOOK not in gradle_file.read_text(encoding="utf-8"):
-        if not args.check:
-            with gradle_file.open("a", encoding="utf-8") as fh:
-                fh.write(GRADLE_HOOK)
+    gradle_source = repo / APP_GRADLE_SOURCE
+    if not gradle_source.exists():
+        print(f"::error::缺少 {APP_GRADLE_SOURCE}", file=sys.stderr)
+        return 1
 
     if args.check:
         print(f"✅ {PANEL_TARGET}：将用 fork 版覆盖（dry run）")
-        print(f"✅ {APP_GRADLE}：追加包名/版本号 override（dry run）")
+        print(f"✅ {APP_GRADLE}：将用 fork 版覆盖（dry run）")
         print(f"✅ {SCREEN}：倒计时归零（dry run）")
         return 0
 
     shutil.copyfile(source, target)
+    shutil.copyfile(gradle_source, repo / APP_GRADLE)
     replace_once(screen, COUNTDOWN_FROM, COUNTDOWN_TO)
     print(f"✅ 已覆盖 {PANEL_TARGET}")
+    print(f"✅ 已覆盖 {APP_GRADLE}")
     print(f"✅ 已归零 {SCREEN} 的倒计时")
     return 0
 
