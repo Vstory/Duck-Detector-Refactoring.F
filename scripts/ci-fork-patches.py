@@ -42,6 +42,14 @@ VERSION_CODE_TO = 'this.versionCode = System.getenv("CI_VERSION_CODE")?.toIntOrN
 VERSION_NAME_FROM = "this.versionName = versionName.get()"
 VERSION_NAME_TO = 'this.versionName = System.getenv("CI_VERSION_NAME") ?: versionName.get()'
 
+# AGP 9 不再保证 ciRelease 产出 v3 块（实测 --print-certs 里 v3 为 false），显式打开，
+#   让 CI 的 v2+v3 断言有意义
+SIGNING_V3_FROM = """                        keyPassword = releaseKeyPassword.orNull
+                    }"""
+SIGNING_V3_TO = """                        keyPassword = releaseKeyPassword.orNull
+                        enableV3Signing = true
+                    }"""
+
 
 @dataclass(frozen=True)
 class Result:
@@ -104,6 +112,7 @@ def main() -> int:
     results.append(replace_once(targets["app"], PACKAGE_FROM, PACKAGE_TO, dry))
     results.append(replace_once(targets["version"], VERSION_CODE_FROM, VERSION_CODE_TO, dry))
     results.append(replace_once(targets["version"], VERSION_NAME_FROM, VERSION_NAME_TO, dry))
+    results.append(replace_once(targets["version"], SIGNING_V3_FROM, SIGNING_V3_TO, dry))
 
     failures = [r for r in results if not r.changed]
     for result in results:
