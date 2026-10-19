@@ -61,9 +61,6 @@ env:
   CI_VERSION_CODE_BASE: '5000'
   # manifest 里的 launcher activity 是 NativeActivity（启动壳），不是 .MainActivity
   EXPECT_ACTIVITY: android.app.NativeActivity
-  # fork 用自己那把发布钥（Vstory.jks，别名 Vstory）签名 —— 指纹取法：keytool -list -v
-  #   与 secrets 同源（同步脚本 --dry-run 打印同一个值），两者不符即产物用了别的钥
-  EXPECTED_CERT_SHA256: '8D1B6022D3E3BB837A3BA1870E0EEAC8650F9470B8287EDF549DACEC9E9E2A64'
   APK_DIR_DEBUG: app/build/outputs/apk/debug
   APK_DIR_RELEASE: app/build/outputs/apk/release
   # push 触发时构建 debug + release 两个包（与 Mishka.F 同口径）：debug 供排障、
@@ -174,6 +171,13 @@ jobs:
           printf '%s' "$KEY_BASE64" | base64 -d > "$KS"
           keytool -list -keystore "$KS" -storepass:env STORE_PASSWORD -alias "$KEY_ALIAS" >/dev/null 2>&1 \
             || { echo "::error::密钥库打不开或别名不存在 —— 核对 KEY_BASE64 / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS"; exit 1; }
+
+          # 期望指纹从密钥库本身导出，而不是写死在 workflow 里：改了 secrets 不用同步常量，
+          #   门禁语义也更准 —— 「产物用的就是 secrets 配的那张证书」
+          CERT_SHA="$(keytool -list -v -keystore "$KS" -storepass:env STORE_PASSWORD -alias "$KEY_ALIAS" \
+            | sed -nE 's/^.*SHA256: ([0-9A-Fa-f:]+).*$/\1/p' | head -1 | tr -d ':' | tr 'a-f' 'A-F')"
+          [ -n "$CERT_SHA" ] || { echo "::error::读不到签名证书 SHA-256"; exit 1; }
+          echo "EXPECTED_CERT_SHA256=$CERT_SHA" >> "$GITHUB_ENV"
 
           {
             printf 'KEYSTORE_PATH=%s\n' "$KS"
@@ -293,6 +297,8 @@ jobs:
             [ -n "$DIGEST" ] || { echo "::error::$NAME 读不到签名证书指纹"; printf '%s\n' "$OUT"; exit 1; }
             ACTUAL="$(printf '%s' "$DIGEST" | tr -d ':' | tr 'a-f' 'A-F')"
             if [ "$VAR" = release ]; then
+              [ -n "${EXPECTED_CERT_SHA256:-}" ] \
+                || { echo "::error::没有期望指纹可比对 —— 签名准备步骤没跑"; exit 1; }
               if [ "$ACTUAL" != "$EXPECTED_CERT_SHA256" ]; then
                 echo "::error::$NAME 签名指纹不是自家发布钥 —— 拒绝发布（多半是 secrets 没配好）"
                 echo "  期望: $EXPECTED_CERT_SHA256"
