@@ -38,6 +38,12 @@ android {
         versionCode = (System.getenv("CI_VERSION_CODE") ?: "5000").toInt()
         versionName = System.getenv("CI_VERSION_NAME") ?: "1.0.0"
     }
+
+    signingConfigs {
+        // AGP 9 默认不再签 v3，而 minSdk 29 的机型只认 v3 及以上；ciRelease 只在 CI 传了
+        //   ANDROID_KEYSTORE_* 时才由 build-logic 创建，本地无密钥时这里是空操作
+        findByName("ciRelease")?.enableV3Signing = true
+    }
 }
 
 registerInstallerCanaryAssets(
