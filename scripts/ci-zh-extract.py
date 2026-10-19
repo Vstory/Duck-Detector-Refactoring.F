@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """List the user-facing strings the Chinese overlay could translate, and report drift.
 
-The overlay lives in `scripts/ci-zh-strings.csv` and is injected while the CI builds, so the
+The overlay lives in `fork/build/zh-strings.csv` and is injected while the CI builds, so the
 repository stays byte-identical to upstream. This command is the read side:
 
 * missing - source copy with no row in the table (the overlay leaves it English).
@@ -69,7 +69,7 @@ def collect(repo: Path) -> dict[str, Candidate]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("repo", nargs="?", default=".", help="repository root")
-    parser.add_argument("--table", default="scripts/ci-zh-strings.csv")
+    parser.add_argument("--table", default="fork/build/zh-strings.csv")
     parser.add_argument("--json", action="store_true", help="print the missing list as JSON")
     parser.add_argument("--write-missing", metavar="PATH", help="append empty rows for review")
     parser.add_argument("--fail-on-missing", action="store_true")

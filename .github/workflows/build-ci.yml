@@ -7,7 +7,7 @@
 #        （build-logic 的 GitMetadataValueSources），故产物名在编译前用 git 自行算出，
 #        编译后再拿 output-metadata.json 断言，两侧同源；
 #     ② fork 改写**全部发生在工作区**（协议页 + 中文覆盖），仓库源码与上游逐字一致
-#        ⇒ merge upstream 永不出冲突。见「Apply fork patches」「Apply Chinese overlay」；
+#        ⇒ merge upstream 永不出冲突。见「Apply fork overlay」「Apply Chinese overlay」；
 #     ③ 产物门禁去掉 libxposed 三件套，改为包名 / 版本 / 变体 / 签名（本项目不是模块）；
 #     ④ 构建环境直接复用上游 `.github/actions/setup-android-build`（它按 gradle.properties
 #        里钉死的 JDK / SDK / NDK / build-tools 装），不在这里另写一份版本号。
@@ -54,6 +54,7 @@ env:
   # 产物门禁
   # fork 包名：加 `.fork` 后缀与上游原版并存安装（同 Mishka.F 的做法）。namespace 保持上游不变 ——
   #   `.MainActivity` 这类相对名与 R 类都按 namespace 解析，改它会让包能装但一开就崩
+  APPLICATION_ID: com.eltavine.duckdetector.fork
   EXPECT_PACKAGE: com.eltavine.duckdetector.fork
   # 版本号自己定，不跟上游的「日期 + 提交数」：versionName 是常量、versionCode = 基数 + 运行序号。
   #   提交数会被 squash 合并拉低 ⇒ 拿它当 versionCode 会导致降级装机，故改用单调的 run_number
@@ -67,7 +68,7 @@ env:
   #   release 是带自家签名钥（Vstory.jks）的正式包
   PUSH_VARIANT: both
   # 中文覆盖表
-  ZH_TABLE: scripts/ci-zh-strings.csv
+  ZH_TABLE: fork/build/zh-strings.csv
 
 jobs:
   build:
@@ -87,12 +88,12 @@ jobs:
         with:
           cache-read-only: ${{ github.ref_name != github.event.repository.default_branch }}
 
-      # 协议页补丁：上游要「等 30 秒 + 滚到底 + 答对算术题」才放行，fork 只要一次点击。
-      #   锚点找不到即失败（上游改了写法必须回来同步），不静默沿用上游行为。
-      - name: Apply fork patches
-        run: python3 scripts/ci-fork-patches.py .
+      # 协议页覆盖：上游要「等 30 秒 + 滚到底 + 答对算术题」才放行，fork 只要一次点击。
+      #   只覆盖源码文件，不碰上游构建配置；锚点找不到即失败，不静默沿用上游行为。
+      - name: Apply fork overlay
+        run: python3 scripts/ci-fork-overlay.py .
 
-      # 中文覆盖：只改工作区里的 Kotlin 字面量，不落库。对照表在 scripts/ci-zh-strings.csv（en,zh,note）。
+      # 中文覆盖：只改工作区里的 Kotlin 字面量，不落库。对照表在 fork/build/zh-strings.csv（en,zh,note）。
       #   --min 1 是防呆：表非空却一处都没替换上，说明扫描范围或锚点失效了。
       - name: Apply Chinese overlay
         run: |
@@ -110,7 +111,7 @@ jobs:
       # 版本号与产物名的唯一来源。版本号是 fork 自己的规则，与上游无关：
       #   versionName = CI_VERSION_NAME（常量）
       #   versionCode = CI_VERSION_CODE_BASE + 本次 run_number（单调递增，不受 squash 拉低）
-      # 这两项经 ci-fork-patches.py 注入 build-logic（读同名环境变量），所以构建前必须导出。
+      # 这两项由 fork/build/fork.init.gradle 在构建时写进 variant，所以构建前必须导出。
       # 命名：<前缀>_<版本名>_<版本代码>_<变体>_<短号>.apk —— 不带时间戳，靠短号区分不同提交
       #   滚动页刷新器从右往左按 `_` 取段 ⇒ 版本段里的点不会错位。
       - name: Resolve APK name
@@ -191,7 +192,9 @@ jobs:
 
       - name: Gradle build
         env:
-          # build-logic 被 ci-fork-patches.py 改成读这两个变量；不传就退回上游的日期+提交数
+          # 包名与版本号由 fork/build/fork.init.gradle 经 -I 注入（走 AGP 的 variant API），
+          #   上游构建文件一行不改；不传这两个变量时 init script 用自带默认值
+          CI_APPLICATION_ID: ${{ env.APPLICATION_ID }}
           CI_VERSION_NAME: ${{ env.CI_VERSION_NAME }}
           CI_VERSION_CODE: ${{ env.CODE }}
         run: |
@@ -199,8 +202,8 @@ jobs:
           chmod +x gradlew
           for v in $VARIANT_LIST; do
             case "$v" in
-              debug)   ./gradlew --no-daemon :app:assembleDebug ;;
-              release) ./gradlew --no-daemon :app:assembleRelease ;;
+              debug)   ./gradlew --no-daemon -I fork/build/fork.init.gradle :app:assembleDebug ;;
+              release) ./gradlew --no-daemon -I fork/build/fork.init.gradle :app:assembleRelease ;;
             esac
           done
           ls -la app/build/outputs/apk/*/ || true
@@ -272,7 +275,7 @@ jobs:
               || { echo "::error::$NAME 包名不是 ${EXPECT_PACKAGE}：$PKG_LINE"; exit 1; }
             printf '%s' "$BADGING" | grep -Fq "launchable-activity: name='${EXPECT_ACTIVITY}'" \
               || { echo "::error::$NAME 启动类不是 ${EXPECT_ACTIVITY}"; exit 1; }
-            # 版本号由 ci-fork-patches.py 注入 ⇒ 不符说明 patch 没生效，包还是上游那套日期+提交数，
+            # 版本号由 fork/build/fork.init.gradle 注入 ⇒ 不符说明 init script 没生效，包还是上游那套日期+提交数，
             #   装上会与已有版本打架
             printf '%s' "$PKG_LINE" | grep -Fq "versionCode='${CODE}'" \
               || { echo "::error::$NAME 的 versionCode 不是注入值（期望 ${CODE}）：$PKG_LINE"; exit 1; }
