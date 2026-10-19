@@ -317,17 +317,15 @@ jobs:
                 echo "  实际: $ACTUAL"
                 exit 1
               fi
-              # 只断言 minSdk 真正会走的方案：本项目 minSdk 29（Android 10）⇒ 安装只认 v3 及
-              #   以上，v2 是 Android 7–8 的路径，AGP 9 在 minSdk ≥ 28 时不再冗余签它。断言 v2
-              #   会误伤；v2 的状态只打出来备查。
+              # v2 与 v3 都要有：v3 是 minSdk 29 机型的安装路径，v2 是 Android 7–8 的；两边
+              #   的验证门槛不同（minSdk ≥ 28 时 apksig 把 v2 当冗余、跳过上报），故分开验
               V2_OUT="$("$APKSIGNER" verify --verbose --min-sdk-version 24 "$APK" 2>&1 || true)"
               V3_OUT="$("$APKSIGNER" verify --verbose --min-sdk-version "$MIN_SDK" "$APK" 2>&1 || true)"
+              printf '%s' "$V2_OUT" | grep -qE "Verified using v2 scheme.*: true" \
+                || { echo "::error::$NAME 未启用 v2 签名方案"; printf '%s\n' "$V2_OUT"; exit 1; }
               printf '%s' "$V3_OUT" | grep -qE "Verified using v3(\.1|\.2)? scheme.*: true" \
-                || { echo "::error::$NAME 未启用 v3 签名方案 —— minSdk ${MIN_SDK} 的机型装不上"; printf '%s\n' "$V3_OUT"; exit 1; }
-              if printf '%s' "$V2_OUT" | grep -qE "Verified using v2 scheme.*: true"; then
-                echo "  ✅ 签名有效，指纹为自家发布钥（v2+v3）"
-              else
-                echo "  ✅ 签名有效，指纹为自家发布钥（v3；v2 未签，minSdk ${MIN_SDK} 不需要）"
+                || { echo "::error::$NAME 未启用 v3 签名方案"; printf '%s\n' "$V3_OUT"; exit 1; }
+              echo "  ✅ 签名有效，指纹为自家发布钥（v2+v3）：$ACTUAL"
               fi
             else
               echo "  ✅ 签名有效（debug keystore）：$ACTUAL"
