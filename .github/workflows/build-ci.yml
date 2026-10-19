@@ -55,10 +55,14 @@ env:
   EXPECT_PACKAGE: com.eltavine.duckdetector
   # manifest 里的 launcher activity 是 NativeActivity（启动壳），不是 .MainActivity
   EXPECT_ACTIVITY: android.app.NativeActivity
+  # fork 用自己那把发布钥（Vstory.jks，别名 Vstory）签名 —— 指纹取法：keytool -list -v
+  #   与 secrets 同源（同步脚本 --dry-run 打印同一个值），两者不符即产物用了别的钥
+  EXPECTED_CERT_SHA256: '8D1B6022D3E3BB837A3BA1870E0EEAC8650F9470B8287EDF549DACEC9E9E2A64'
   APK_DIR_DEBUG: app/build/outputs/apk/debug
   APK_DIR_RELEASE: app/build/outputs/apk/release
-  # push 触发时构建哪些变体：debug 不需要签名 secret ⇒ 首次接入即可出包
-  PUSH_VARIANT: debug
+  # push 触发时构建 debug + release 两个包（与 Mishka.F 同口径）：debug 供排障、
+  #   release 是带自家签名钥（Vstory.jks）的正式包
+  PUSH_VARIANT: both
   # 中文覆盖表
   ZH_TABLE: scripts/ci-zh-strings.yml
 
@@ -271,7 +275,29 @@ jobs:
               printf '%s\n' "$OUT"
               exit 1
             fi
-            echo "  ✅ 签名有效"
+            # 指纹行随 build-tools 版本变化（V2 Signer / V3.0 Signer / Signer #1 …），但各行列的
+            #   是同一张证书，取第一行即可
+            DIGEST="$(printf '%s' "$OUT" | sed -nE 's/^.*certificate SHA-256 digest: ([0-9a-fA-F]+).*$/\1/p' | head -1)"
+            [ -n "$DIGEST" ] || { echo "::error::$NAME 读不到签名证书指纹"; printf '%s\n' "$OUT"; exit 1; }
+            ACTUAL="$(printf '%s' "$DIGEST" | tr -d ':' | tr 'a-f' 'A-F')"
+            if [ "$VAR" = release ]; then
+              if [ "$ACTUAL" != "$EXPECTED_CERT_SHA256" ]; then
+                echo "::error::$NAME 签名指纹不是自家发布钥 —— 拒绝发布（多半是 secrets 没配好）"
+                echo "  期望: $EXPECTED_CERT_SHA256"
+                echo "  实际: $ACTUAL"
+                exit 1
+              fi
+              # v2/v3 都必须有。⚠️ 必须带 --min-sdk-version 24：minSdk ≥ 28 时 apksig 视 v2 为
+              #   冗余并跳过上报，会误报 "v2: false"（那是上报语义，不是块缺失）
+              VERBOSE="$("$APKSIGNER" verify --verbose --min-sdk-version 24 "$APK" 2>&1 || true)"
+              for scheme in v2 v3; do
+                printf '%s' "$VERBOSE" | grep -qE "Verified using ${scheme} scheme.*: true" \
+                  || { echo "::error::$NAME 未启用 ${scheme} 签名方案"; printf '%s\n' "$VERBOSE"; exit 1; }
+              done
+              echo "  ✅ 签名有效，指纹为自家发布钥（v2+v3）：$ACTUAL"
+            else
+              echo "  ✅ 签名有效（debug keystore）：$ACTUAL"
+            fi
           done
 
       - name: Publish to ci release
