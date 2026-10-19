@@ -1,0 +1,14 @@
+# Duck Detector 中文覆盖表（仅 fork 自用）
+#
+# key   = 源码里的英文原文。插值位置按出现顺序写成 {0}、{1}；变量改名不影响匹配。
+# value = 中文译文。源码里有几个插值，译文就必须用几个占位符（顺序可调，不能删）。
+#
+# 改完跑 `python3 scripts/ci-zh-extract.py .` 看有没有漏翻或失效。
+
+# —— 连通性验证用样例，正式词条随后补齐 ——
+"Bootloader": "引导加载程序"
+"Pending": "待检测"
+"High": "高"
+"{0} critical boot integrity signal(s)": "发现 {0} 项关键启动完整性信号"
+"Unlocked state, attestation contradictions, broken certificate trust, or verified-boot failures indicate reduced device trust.": "解锁状态、认证结论矛盾、证书信任失效或验证启动失败，都说明本机可信度下降。"
+"Start with {0}.": "先看 {0}。"
