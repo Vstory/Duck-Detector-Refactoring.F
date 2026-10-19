@@ -326,7 +326,6 @@ jobs:
               printf '%s' "$V3_OUT" | grep -qE "Verified using v3(\.1|\.2)? scheme.*: true" \
                 || { echo "::error::$NAME 未启用 v3 签名方案"; printf '%s\n' "$V3_OUT"; exit 1; }
               echo "  ✅ 签名有效，指纹为自家发布钥（v2+v3）：$ACTUAL"
-              fi
             else
               echo "  ✅ 签名有效（debug keystore）：$ACTUAL"
             fi
