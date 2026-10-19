@@ -1,0 +1,13 @@
+// fork 的包名与版本号。由 CI 在 app/build.gradle.kts 末尾追加一行 apply 引入，
+// 上游构建文件的内容一行不改，故上游怎么重构都不会与这里冲突。
+//
+// 必须在 build.gradle.kts 执行期（配置阶段）赋值：AGP 在 afterEvaluate 才把
+// defaultConfig 读进 variant，写在末尾刚好赶在它前面；用 init script 则会被
+// 上游自己的 defaultConfig 赋值覆盖回去。
+android {
+    defaultConfig {
+        applicationId = System.getenv("CI_APPLICATION_ID") ?: "com.eltavine.duckdetector.fork"
+        versionCode = (System.getenv("CI_VERSION_CODE") ?: "5000").toInteger()
+        versionName = System.getenv("CI_VERSION_NAME") ?: "1.0.0"
+    }
+}

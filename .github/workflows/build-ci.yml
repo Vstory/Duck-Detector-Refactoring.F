@@ -111,7 +111,7 @@ jobs:
       # 版本号与产物名的唯一来源。版本号是 fork 自己的规则，与上游无关：
       #   versionName = CI_VERSION_NAME（常量）
       #   versionCode = CI_VERSION_CODE_BASE + 本次 run_number（单调递增，不受 squash 拉低）
-      # 这两项由 fork/ci/fork.init.gradle 在构建时写进 variant，所以构建前必须导出。
+      # 这两项由 fork/ci/fork.overrides.gradle 在构建时写进 defaultConfig，所以构建前必须导出。
       # 命名：<前缀>_<版本名>_<版本代码>_<变体>_<短号>.apk —— 不带时间戳，靠短号区分不同提交
       #   滚动页刷新器从右往左按 `_` 取段 ⇒ 版本段里的点不会错位。
       - name: Resolve APK name
@@ -192,8 +192,8 @@ jobs:
 
       - name: Gradle build
         env:
-          # 包名与版本号由 fork/ci/fork.init.gradle 经 -I 注入（走 AGP 的 variant API），
-          #   上游构建文件一行不改；不传这两个变量时 init script 用自带默认值
+          # 包名与版本号由 fork/ci/fork.overrides.gradle 读取（CI 在 app/build.gradle.kts 末尾
+          #   append 了一行 apply），上游构建文件一行不改
           CI_APPLICATION_ID: ${{ env.APPLICATION_ID }}
           CI_VERSION_NAME: ${{ env.CI_VERSION_NAME }}
           CI_VERSION_CODE: ${{ env.CODE }}
@@ -202,8 +202,8 @@ jobs:
           chmod +x gradlew
           for v in $VARIANT_LIST; do
             case "$v" in
-              debug)   ./gradlew --no-daemon -I fork/ci/fork.init.gradle :app:assembleDebug ;;
-              release) ./gradlew --no-daemon -I fork/ci/fork.init.gradle :app:assembleRelease ;;
+              debug)   ./gradlew --no-daemon :app:assembleDebug ;;
+              release) ./gradlew --no-daemon :app:assembleRelease ;;
             esac
           done
           ls -la app/build/outputs/apk/*/ || true
@@ -275,7 +275,7 @@ jobs:
               || { echo "::error::$NAME 包名不是 ${EXPECT_PACKAGE}：$PKG_LINE"; exit 1; }
             printf '%s' "$BADGING" | grep -Fq "launchable-activity: name='${EXPECT_ACTIVITY}'" \
               || { echo "::error::$NAME 启动类不是 ${EXPECT_ACTIVITY}"; exit 1; }
-            # 版本号由 fork/ci/fork.init.gradle 注入 ⇒ 不符说明 init script 没生效，包还是上游那套日期+提交数，
+            # 版本号由 fork/ci/fork.overrides.gradle 注入 ⇒ 不符说明 override 没生效，包还是上游那套日期+提交数，
             #   装上会与已有版本打架
             printf '%s' "$PKG_LINE" | grep -Fq "versionCode='${CODE}'" \
               || { echo "::error::$NAME 的 versionCode 不是注入值（期望 ${CODE}）：$PKG_LINE"; exit 1; }

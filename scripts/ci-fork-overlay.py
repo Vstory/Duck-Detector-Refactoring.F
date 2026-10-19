@@ -14,6 +14,9 @@ import sys
 from pathlib import Path
 
 LEGAL = "app/src/main/java/com/eltavine/duckdetector/startup/legal"
+APP_GRADLE = "app/build.gradle.kts"
+# 追加而不是改写：上游这个文件的任何一行变动都不会让这段失效
+GRADLE_HOOK = '\napply(from = rootProject.file("fork/ci/fork.overrides.gradle"))\n'
 PANEL_SOURCE = "fork/ci/AgreementConsentPanel.kt"
 PANEL_TARGET = f"{LEGAL}/AgreementConsentPanel.kt"
 
@@ -55,8 +58,15 @@ def main() -> int:
         print(f"::error::{SCREEN} 里找不到倒计时锚点 —— 上游改了写法，需回来同步", file=sys.stderr)
         return 1
 
+    gradle_file = repo / APP_GRADLE
+    if GRADLE_HOOK not in gradle_file.read_text(encoding="utf-8"):
+        if not args.check:
+            with gradle_file.open("a", encoding="utf-8") as fh:
+                fh.write(GRADLE_HOOK)
+
     if args.check:
         print(f"✅ {PANEL_TARGET}：将用 fork 版覆盖（dry run）")
+        print(f"✅ {APP_GRADLE}：追加包名/版本号 override（dry run）")
         print(f"✅ {SCREEN}：倒计时归零（dry run）")
         return 0
 
