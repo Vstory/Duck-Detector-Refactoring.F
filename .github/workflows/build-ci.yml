@@ -49,7 +49,7 @@ env:
   CI_TAG: ci
   CI_TITLE: CI Build
   KEEP_GROUPS: '6'
-  COLUMNS: time,version,commit,variant,size,download
+  COLUMNS: version,commit,variant,size,download
   REFRESH_SCRIPT: scripts/ci-refresh-page.sh
   # 产物门禁
   # fork 包名：加 `.fork` 后缀与上游原版并存安装（同 Mishka.F 的做法）。namespace 保持上游不变 ——
@@ -59,8 +59,6 @@ env:
   #   提交数会被 squash 合并拉低 ⇒ 拿它当 versionCode 会导致降级装机，故改用单调的 run_number
   CI_VERSION_NAME: '1.0.0'
   CI_VERSION_CODE_BASE: '5000'
-  # manifest 里的 launcher activity 是 NativeActivity（启动壳），不是 .MainActivity
-  EXPECT_ACTIVITY: android.app.NativeActivity
   # manifest 里的 launcher activity 是 NativeActivity（启动壳），不是 .MainActivity
   EXPECT_ACTIVITY: android.app.NativeActivity
   # fork 用自己那把发布钥（Vstory.jks，别名 Vstory）签名 —— 指纹取法：keytool -list -v
