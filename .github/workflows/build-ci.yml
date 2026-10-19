@@ -179,12 +179,14 @@ jobs:
           [ -n "$CERT_SHA" ] || { echo "::error::读不到签名证书 SHA-256"; exit 1; }
           echo "EXPECTED_CERT_SHA256=$CERT_SHA" >> "$GITHUB_ENV"
 
+          # build-logic 读的是这几个环境变量（providers.environmentVariable），不是 local.properties；
+          #   写错地方时 Gradle 会静默回退到 debug keystore，包照样出但签名不对
           {
-            printf 'KEYSTORE_PATH=%s\n' "$KS"
-            printf 'KEYSTORE_PASS=%s\n' "$STORE_PASSWORD"
-            printf 'KEY_ALIAS=%s\n' "$KEY_ALIAS"
-            printf 'KEY_PASSWORD=%s\n' "$KEY_PASSWORD"
-          } >> local.properties
+            printf 'ANDROID_KEYSTORE_PATH=%s\n' "$KS"
+            printf 'ANDROID_KEYSTORE_PASSWORD=%s\n' "$STORE_PASSWORD"
+            printf 'ANDROID_KEY_ALIAS=%s\n' "$KEY_ALIAS"
+            printf 'ANDROID_KEY_PASSWORD=%s\n' "$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
           echo "已按固定密钥配置签名"
 
       - name: Gradle build
