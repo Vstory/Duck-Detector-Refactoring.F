@@ -247,6 +247,8 @@ jobs:
       - name: Verify APK (package + version + variant + signature)
         run: |
           set -euo pipefail
+          MIN_SDK="$(sed -nE 's/^duckdetector\.android\.minSdk=([0-9]+).*/\1/p' gradle.properties | head -1)"
+          [ -n "$MIN_SDK" ] || { echo "::error::读不到 duckdetector.android.minSdk"; exit 1; }
           APKSIGNER="$(command -v apksigner || true)"
           [ -n "$APKSIGNER" ] || APKSIGNER="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)"
           AAPT2="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1)"
@@ -307,13 +309,14 @@ jobs:
                 echo "  实际: $ACTUAL"
                 exit 1
               fi
-              # v2/v3 都必须有。⚠️ 必须带 --min-sdk-version 24：minSdk ≥ 28 时 apksig 视 v2 为
-              #   冗余并跳过上报，会误报 "v2: false"（那是上报语义，不是块缺失）
-              VERBOSE="$("$APKSIGNER" verify --verbose --min-sdk-version 24 "$APK" 2>&1 || true)"
-              for scheme in v2 v3; do
-                printf '%s' "$VERBOSE" | grep -qE "Verified using ${scheme} scheme.*: true" \
-                  || { echo "::error::$NAME 未启用 ${scheme} 签名方案"; printf '%s\n' "$VERBOSE"; exit 1; }
-              done
+              # v2 与 v3 的验证门槛不同，得分开验：minSdk ≥ 28 时 apksig 视 v2 为冗余、跳过上报
+              #   （误报 "v2: false"），而拿 24 去验又轮不到 v3 上报。两个门槛各查各的。
+              V2_OUT="$("$APKSIGNER" verify --verbose --min-sdk-version 24 "$APK" 2>&1 || true)"
+              V3_OUT="$("$APKSIGNER" verify --verbose --min-sdk-version "$MIN_SDK" "$APK" 2>&1 || true)"
+              printf '%s' "$V2_OUT" | grep -qE "Verified using v2 scheme.*: true" \
+                || { echo "::error::$NAME 未启用 v2 签名方案"; printf '%s\n' "$V2_OUT"; exit 1; }
+              printf '%s' "$V3_OUT" | grep -qE "Verified using v3(\.1|\.2)? scheme.*: true" \
+                || { echo "::error::$NAME 未启用 v3 签名方案"; printf '%s\n' "$V3_OUT"; exit 1; }
               echo "  ✅ 签名有效，指纹为自家发布钥（v2+v3）：$ACTUAL"
             else
               echo "  ✅ 签名有效（debug keystore）：$ACTUAL"
