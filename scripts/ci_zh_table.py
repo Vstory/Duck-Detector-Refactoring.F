@@ -239,7 +239,9 @@ def load_table(path: Path) -> dict[str, str]:
     """Read the overlay table: quoted `key: value` rows, optionally spanning indented lines.
 
     Only the subset this repository writes is supported, which keeps the build free of a YAML
-    dependency; entries with an empty value count as "not translated yet".
+    dependency; entries with an empty value count as "not translated yet". A literal `\\n`
+    stands for a newline in both key and value, because some source literals are multi-line
+    and a raw newline cannot appear in a single table row.
     """
     table: dict[str, str] = {}
     if not path.exists():
@@ -257,13 +259,19 @@ def load_table(path: Path) -> dict[str, str]:
             pending_key, pending_lines = None, []
         if ":" not in raw or raw.startswith("-"):
             continue
-        key, _, value = raw.partition(":")
-        key = key.strip().strip('"').strip("'")
-        value = value.strip()
+        # A quoted key may itself contain a colon ("SELinux paradox: ..."), so split on the
+        # closing quote rather than on the first colon.
+        quoted = re.match(r'^"((?:[^"\\]|\\.)*)"\s*:\s*(.*)$', raw)
+        if quoted:
+            key, value = quoted.group(1), quoted.group(2).strip()
+        else:
+            key, _, value = raw.partition(":")
+            key, value = key.strip().strip('"').strip("'"), value.strip()
         if value in {"|", ">"}:
             pending_key = key
         else:
             table[key] = value.strip('"').strip("'")
     if pending_key is not None:
         table[pending_key] = " ".join(pending_lines).strip()
-    return {k: v for k, v in table.items() if v}
+    unescaped = {k.replace("\\n", "\n"): v.replace("\\n", "\n") for k, v in table.items()}
+    return {k: v for k, v in unescaped.items() if v}
