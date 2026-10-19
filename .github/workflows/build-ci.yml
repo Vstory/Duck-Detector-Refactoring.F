@@ -64,7 +64,7 @@ env:
   #   release 是带自家签名钥（Vstory.jks）的正式包
   PUSH_VARIANT: both
   # 中文覆盖表
-  ZH_TABLE: scripts/ci-zh-strings.yml
+  ZH_TABLE: scripts/ci-zh-strings.csv
 
 jobs:
   build:
@@ -89,7 +89,7 @@ jobs:
       - name: Apply fork patches
         run: python3 scripts/ci-fork-patches.py .
 
-      # 中文覆盖：只改工作区里的 Kotlin 字面量，不落库。对照表在 scripts/ci-zh-strings.yml。
+      # 中文覆盖：只改工作区里的 Kotlin 字面量，不落库。对照表在 scripts/ci-zh-strings.csv（en,zh,note）。
       #   --min 1 是防呆：表非空却一处都没替换上，说明扫描范围或锚点失效了。
       - name: Apply Chinese overlay
         run: |

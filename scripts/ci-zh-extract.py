@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """List the user-facing strings the Chinese overlay could translate, and report drift.
 
-The overlay lives in `scripts/ci-zh-strings.yml` and is injected while the CI builds, so the
+The overlay lives in `scripts/ci-zh-strings.csv` and is injected while the CI builds, so the
 repository stays byte-identical to upstream. This command is the read side:
 
 * missing - source copy with no row in the table (the overlay leaves it English).
@@ -63,7 +63,7 @@ def collect(repo: Path) -> dict[str, Candidate]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("repo", nargs="?", default=".", help="repository root")
-    parser.add_argument("--table", default="scripts/ci-zh-strings.yml")
+    parser.add_argument("--table", default="scripts/ci-zh-strings.csv")
     parser.add_argument("--json", action="store_true", help="print the missing list as JSON")
     parser.add_argument("--write-missing", metavar="PATH", help="append empty rows for review")
     parser.add_argument("--fail-on-missing", action="store_true")
@@ -106,7 +106,7 @@ def main() -> int:
     if args.write_missing:
         target = Path(args.write_missing)
         rows = [f'"{key}": ""' for key in sorted(missing, key=lambda k: candidate_order(missing[k]))]
-        header = "" if target.exists() else "# 待翻译：填入中文后移入 ci-zh-strings.yml\n"
+        header = "" if target.exists() else "en,zh,note\n"
         target.write_text(header + "\n".join(rows) + "\n", encoding="utf-8")
         print(f"\n已写入待翻译清单：{target}（{len(rows)} 行）")
 

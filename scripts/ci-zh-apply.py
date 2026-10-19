@@ -98,7 +98,7 @@ def apply_to_text(text: str, table: dict[str, str]) -> tuple[str, int, int, list
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("repo", nargs="?", default=".", help="repository root")
-    parser.add_argument("--table", default="scripts/ci-zh-strings.yml")
+    parser.add_argument("--table", default="scripts/ci-zh-strings.csv")
     parser.add_argument("--check", action="store_true", help="report without writing")
     parser.add_argument("--summary", metavar="PATH", help="append a one-line summary to this file")
     parser.add_argument("--min", type=int, default=0,

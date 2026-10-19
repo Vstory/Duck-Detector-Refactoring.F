@@ -7,6 +7,7 @@ what a "key" is; a mismatch there would silently translate nothing at all.
 
 from __future__ import annotations
 
+import csv
 import re
 from pathlib import Path
 
@@ -236,42 +237,24 @@ def is_safe_context(text: str, start: int, end: int) -> bool:
 
 
 def load_table(path: Path) -> dict[str, str]:
-    """Read the overlay table: quoted `key: value` rows, optionally spanning indented lines.
+    """Read the overlay table: `en,zh,note` rows, empty `zh` meaning "not translated yet".
 
-    Only the subset this repository writes is supported, which keeps the build free of a YAML
-    dependency; entries with an empty value count as "not translated yet". A literal `\\n`
-    stands for a newline in both key and value, because some source literals are multi-line
-    and a raw newline cannot appear in a single table row.
+    A literal `\\n` stands for a newline in both columns, so a multi-line source literal still
+    occupies exactly one row and `git diff` shows which entry changed. Parsing uses the standard
+    library's csv module rather than hand-rolled splitting: source copy contains commas, colons
+    and quotes, and RFC 4180 quoting is exactly what csv already gets right.
     """
     table: dict[str, str] = {}
     if not path.exists():
         return table
-    pending_key: str | None = None
-    pending_lines: list[str] = []
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        if not raw.strip() or raw.lstrip().startswith("#"):
-            continue
-        if raw.startswith("  ") and pending_key is not None:
-            pending_lines.append(raw.strip())
-            continue
-        if pending_key is not None:
-            table[pending_key] = " ".join(pending_lines).strip()
-            pending_key, pending_lines = None, []
-        if ":" not in raw or raw.startswith("-"):
-            continue
-        # A quoted key may itself contain a colon ("SELinux paradox: ..."), so split on the
-        # closing quote rather than on the first colon.
-        quoted = re.match(r'^"((?:[^"\\]|\\.)*)"\s*:\s*(.*)$', raw)
-        if quoted:
-            key, value = quoted.group(1), quoted.group(2).strip()
-        else:
-            key, _, value = raw.partition(":")
-            key, value = key.strip().strip('"').strip("'"), value.strip()
-        if value in {"|", ">"}:
-            pending_key = key
-        else:
-            table[key] = value.strip('"').strip("'")
-    if pending_key is not None:
-        table[pending_key] = " ".join(pending_lines).strip()
-    unescaped = {k.replace("\\n", "\n"): v.replace("\\n", "\n") for k, v in table.items()}
-    return {k: v for k, v in unescaped.items() if v}
+    with path.open(encoding="utf-8", newline="") as handle:
+        for row in csv.reader(handle):
+            if len(row) < 2 or not row[0].strip():
+                continue
+            if row[0] == "en":
+                continue
+            key, value = row[0], row[1]
+            if not value.strip():
+                continue
+            table[key.replace("\\n", "\n")] = value.replace("\\n", "\n")
+    return table
