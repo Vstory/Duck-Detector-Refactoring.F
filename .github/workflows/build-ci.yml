@@ -68,7 +68,7 @@ env:
   #   release 是带自家签名钥（Vstory.jks）的正式包
   PUSH_VARIANT: both
   # 中文覆盖表
-  ZH_TABLE: fork/build/zh-strings.csv
+  ZH_TABLE: fork/ci/zh-strings.csv
 
 jobs:
   build:
@@ -93,7 +93,7 @@ jobs:
       - name: Apply fork overlay
         run: python3 scripts/ci-fork-overlay.py .
 
-      # 中文覆盖：只改工作区里的 Kotlin 字面量，不落库。对照表在 fork/build/zh-strings.csv（en,zh,note）。
+      # 中文覆盖：只改工作区里的 Kotlin 字面量，不落库。对照表在 fork/ci/zh-strings.csv（en,zh,note）。
       #   --min 1 是防呆：表非空却一处都没替换上，说明扫描范围或锚点失效了。
       - name: Apply Chinese overlay
         run: |
@@ -111,7 +111,7 @@ jobs:
       # 版本号与产物名的唯一来源。版本号是 fork 自己的规则，与上游无关：
       #   versionName = CI_VERSION_NAME（常量）
       #   versionCode = CI_VERSION_CODE_BASE + 本次 run_number（单调递增，不受 squash 拉低）
-      # 这两项由 fork/build/fork.init.gradle 在构建时写进 variant，所以构建前必须导出。
+      # 这两项由 fork/ci/fork.init.gradle 在构建时写进 variant，所以构建前必须导出。
       # 命名：<前缀>_<版本名>_<版本代码>_<变体>_<短号>.apk —— 不带时间戳，靠短号区分不同提交
       #   滚动页刷新器从右往左按 `_` 取段 ⇒ 版本段里的点不会错位。
       - name: Resolve APK name
@@ -192,7 +192,7 @@ jobs:
 
       - name: Gradle build
         env:
-          # 包名与版本号由 fork/build/fork.init.gradle 经 -I 注入（走 AGP 的 variant API），
+          # 包名与版本号由 fork/ci/fork.init.gradle 经 -I 注入（走 AGP 的 variant API），
           #   上游构建文件一行不改；不传这两个变量时 init script 用自带默认值
           CI_APPLICATION_ID: ${{ env.APPLICATION_ID }}
           CI_VERSION_NAME: ${{ env.CI_VERSION_NAME }}
@@ -202,8 +202,8 @@ jobs:
           chmod +x gradlew
           for v in $VARIANT_LIST; do
             case "$v" in
-              debug)   ./gradlew --no-daemon -I fork/build/fork.init.gradle :app:assembleDebug ;;
-              release) ./gradlew --no-daemon -I fork/build/fork.init.gradle :app:assembleRelease ;;
+              debug)   ./gradlew --no-daemon -I fork/ci/fork.init.gradle :app:assembleDebug ;;
+              release) ./gradlew --no-daemon -I fork/ci/fork.init.gradle :app:assembleRelease ;;
             esac
           done
           ls -la app/build/outputs/apk/*/ || true
@@ -275,7 +275,7 @@ jobs:
               || { echo "::error::$NAME 包名不是 ${EXPECT_PACKAGE}：$PKG_LINE"; exit 1; }
             printf '%s' "$BADGING" | grep -Fq "launchable-activity: name='${EXPECT_ACTIVITY}'" \
               || { echo "::error::$NAME 启动类不是 ${EXPECT_ACTIVITY}"; exit 1; }
-            # 版本号由 fork/build/fork.init.gradle 注入 ⇒ 不符说明 init script 没生效，包还是上游那套日期+提交数，
+            # 版本号由 fork/ci/fork.init.gradle 注入 ⇒ 不符说明 init script 没生效，包还是上游那套日期+提交数，
             #   装上会与已有版本打架
             printf '%s' "$PKG_LINE" | grep -Fq "versionCode='${CODE}'" \
               || { echo "::error::$NAME 的 versionCode 不是注入值（期望 ${CODE}）：$PKG_LINE"; exit 1; }
@@ -312,15 +312,18 @@ jobs:
                 echo "  实际: $ACTUAL"
                 exit 1
               fi
-              # v2 与 v3 的验证门槛不同，得分开验：minSdk ≥ 28 时 apksig 视 v2 为冗余、跳过上报
-              #   （误报 "v2: false"），而拿 24 去验又轮不到 v3 上报。两个门槛各查各的。
+              # 只断言 minSdk 真正会走的方案：本项目 minSdk 29（Android 10）⇒ 安装只认 v3 及
+              #   以上，v2 是 Android 7–8 的路径，AGP 9 在 minSdk ≥ 28 时不再冗余签它。断言 v2
+              #   会误伤；v2 的状态只打出来备查。
               V2_OUT="$("$APKSIGNER" verify --verbose --min-sdk-version 24 "$APK" 2>&1 || true)"
               V3_OUT="$("$APKSIGNER" verify --verbose --min-sdk-version "$MIN_SDK" "$APK" 2>&1 || true)"
-              printf '%s' "$V2_OUT" | grep -qE "Verified using v2 scheme.*: true" \
-                || { echo "::error::$NAME 未启用 v2 签名方案"; printf '%s\n' "$V2_OUT"; exit 1; }
               printf '%s' "$V3_OUT" | grep -qE "Verified using v3(\.1|\.2)? scheme.*: true" \
-                || { echo "::error::$NAME 未启用 v3 签名方案"; printf '%s\n' "$V3_OUT"; exit 1; }
-              echo "  ✅ 签名有效，指纹为自家发布钥（v2+v3）：$ACTUAL"
+                || { echo "::error::$NAME 未启用 v3 签名方案 —— minSdk ${MIN_SDK} 的机型装不上"; printf '%s\n' "$V3_OUT"; exit 1; }
+              if printf '%s' "$V2_OUT" | grep -qE "Verified using v2 scheme.*: true"; then
+                echo "  ✅ 签名有效，指纹为自家发布钥（v2+v3）"
+              else
+                echo "  ✅ 签名有效，指纹为自家发布钥（v3；v2 未签，minSdk ${MIN_SDK} 不需要）"
+              fi
             else
               echo "  ✅ 签名有效（debug keystore）：$ACTUAL"
             fi

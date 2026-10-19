@@ -2,7 +2,7 @@
 """Lay the fork's own source files over the working tree, for the CI build only.
 
 Nothing is committed, so syncing upstream stays conflict-free. Build settings (application id,
-version, signing) are NOT here -- they come from fork/build/fork.init.gradle plus environment
+version, signing) are NOT here -- they come from fork/ci/fork.init.gradle plus environment
 variables, which leaves upstream's build files untouched.
 """
 
@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 LEGAL = "app/src/main/java/com/eltavine/duckdetector/startup/legal"
-PANEL_SOURCE = "fork/build/AgreementConsentPanel.kt"
+PANEL_SOURCE = "fork/ci/AgreementConsentPanel.kt"
 PANEL_TARGET = f"{LEGAL}/AgreementConsentPanel.kt"
 
 # The consent bar is replaced by a one-tap version, but the screen still runs the 30 second

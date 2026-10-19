@@ -1,0 +1,22 @@
+// fork 的构建参数：包名与版本号。用 `-I fork/ci/fork.init.gradle` 引入，
+// 上游的 build.gradle.kts / build-logic 一行不改，同步上游时不会冲突。
+//
+// 走 ApplicationVariantBuilder（AGP 官方允许改写这三个属性的地方），而不是 afterEvaluate
+// 去改 defaultConfig —— 后者在 AGP 新版本里时有时无。
+def forkApplicationId = System.getenv("CI_APPLICATION_ID") ?: "com.eltavine.duckdetector.fork"
+def forkVersionName = System.getenv("CI_VERSION_NAME") ?: "1.0.0"
+def forkVersionCode = (System.getenv("CI_VERSION_CODE") ?: "5000") as Integer
+
+gradle.beforeProject { project ->
+    project.pluginManager.withPlugin("com.android.application") {
+        def components = project.extensions.findByName("androidComponents")
+        if (components == null) {
+            throw new GradleException("找不到 androidComponents —— AGP 变了写法，fork 的版本号注入失效")
+        }
+        components.beforeVariants(components.selector().all()) { variant ->
+            variant.applicationId = forkApplicationId
+            variant.versionName = forkVersionName
+            variant.versionCode = forkVersionCode
+        }
+    }
+}
