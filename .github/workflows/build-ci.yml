@@ -36,11 +36,16 @@ on:
         default: debug
         required: true
 
-# 并发：不设并发锁 —— 每次 push 都独立出包（排队等前一次跑完会让人拿不到自己那次的产物）。
-#   页面写入的安全靠三件事：幂等创建 + 资产名天然唯一 + 正文全量重建。
+# 并发：同一个 ref 只跑最新的那次，新 push 直接取消在跑的那份 —— 否则连推几次就会
+#   攒出一串排队任务，各自出一份包。页面写入的安全另靠三件事：幂等创建 + 资产名天然唯一
+#   + 正文全量重建。
 
 permissions:
   contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   # 产物名前缀：与 fork 身份同源，改一处即全变（进文件名与下载 URL ⇒ 只允许 A-Za-z0-9._-）
