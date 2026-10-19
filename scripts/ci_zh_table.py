@@ -115,6 +115,34 @@ def kotlin_strings(text: str):
         index += 1
 
 
+# 字面量之间的间隔是 `" + "`（含两个引号），不是裸的加号
+CONCATENATION = re.compile(r'"\s*\+\s*"')
+
+
+def literal_chains(text: str, spans) -> list[list[tuple[int, int]]]:
+    """Group literals joined by `+` so `"a" + "b"` can be treated as one sentence.
+
+    Upstream splits long explanations across adjacent literals; rewriting them one by one leaves
+    half-sentences in English and duplicates text, because only the first fragment reads as copy.
+    """
+    chains: list[list[tuple[int, int]]] = []
+    index = 0
+    spans = list(spans)
+    while index < len(spans):
+        chain = [spans[index]]
+        previous_end = spans[index][1]
+        index += 1
+        while index < len(spans):
+            next_start, next_end = spans[index]
+            if not CONCATENATION.fullmatch(text[previous_end:next_start]):
+                break
+            chain.append((next_start, next_end))
+            previous_end = next_end
+            index += 1
+        chains.append(chain)
+    return chains
+
+
 def normalize(literal: str) -> str:
     """Replace each interpolation with {n} so the key survives local variable renames."""
     out = []

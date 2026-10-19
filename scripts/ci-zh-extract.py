@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ci_zh_table import (  # noqa: E402
     is_display_copy,
     kotlin_strings,
+    literal_chains,
     load_table,
     normalize,
     scan_repo,
@@ -44,8 +45,13 @@ def collect(repo: Path) -> dict[str, Candidate]:
         relative = str(path.relative_to(repo))
         parts = path.relative_to(repo).parts
         module = parts[1] if parts[0] == "feature" else parts[0]
-        for start, end in kotlin_strings(text):
-            literal = text[start:end]
+        spans = list(kotlin_strings(text))
+        for chain in literal_chains(text, spans):
+            first_start, first_end = chain[0]
+            if text[first_start - 1] != '"' or text[chain[-1][1]] != '"':
+                continue
+            start = first_start
+            literal = "".join(text[s:e] for s, e in chain)
             if not literal.strip():
                 continue
             key = normalize(literal).strip()

@@ -24,12 +24,24 @@ from ci_zh_table import (  # noqa: E402
     is_display_copy,
     is_safe_context,
     kotlin_strings,
+    literal_chains,
     load_table,
     normalize,
     scan_repo,
 )
 
 PLACEHOLDER = re.compile(r"\{(\d+)\}")
+
+
+
+def escape_for_kotlin(text: str) -> str:
+    """Re-escape what the translation needs so the injected literal still compiles.
+
+    Newlines are rewritten last and onto a backslash-n escape: a raw newline inside a single-line
+    literal closes the string early and breaks the build.
+    """
+    escaped = text.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$")
+    return escaped.replace("\r\n", "\\n").replace("\n", "\\n")
 
 
 def render(translation: str, bodies: list[str]) -> str:
@@ -52,14 +64,9 @@ def render(translation: str, bodies: list[str]) -> str:
     return "".join(out)
 
 
-def escape_for_kotlin(text: str) -> str:
-    """Re-escape what the translation needs so the injected literal still compiles."""
-    return text.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$")
-
-
 def apply_to_text(text: str, table: dict[str, str]) -> tuple[str, int, int, list[str]]:
-    literal_spans = list(kotlin_strings(text))
-    if not literal_spans:
+    spans = list(kotlin_strings(text))
+    if not spans:
         return text, 0, 0, []
 
     pieces = []
@@ -67,19 +74,27 @@ def apply_to_text(text: str, table: dict[str, str]) -> tuple[str, int, int, list
     replaced = 0
     skipped = 0
     problems: list[str] = []
-    for start, end in literal_spans:
-        literal = text[start:end]
-        key = normalize(literal).strip()
+    for chain in literal_chains(text, spans):
+        first_start, first_end = chain[0]
+        last_end = chain[-1][1]
+        # Only plain double-quoted literals are rewritten; touching a `"""` block or a char
+        # literal would need different quoting and is not worth guessing at.
+        if text[first_start - 1] != '"' or text[last_end] != '"':
+            continue
+        start = first_start - 1
+        end = last_end + 1
+        merged = "".join(text[s:e] for s, e in chain)
+        key = normalize(merged).strip()
         translation = table.get(key)
         if translation is None:
             continue
         context = text[max(0, start - 161):start - 1]
         # Same guard the extractor used: this literal must be shown, not compared, and its
         # surroundings must still look like a display field.
-        if not is_display_copy(literal, key, context) or not is_safe_context(text, start, end):
+        if not is_display_copy(merged, key, context) or not is_safe_context(text, start, end):
             skipped += 1
             continue
-        bodies = interpolation_bodies(literal)
+        bodies = interpolation_bodies(merged)
         used = {int(slot) for slot in PLACEHOLDER.findall(translation)}
         # A translation may reorder placeholders for Chinese word order, but dropping one
         # silently deletes live data from the UI, which no build check downstream would catch.
@@ -88,7 +103,7 @@ def apply_to_text(text: str, table: dict[str, str]) -> tuple[str, int, int, list
             continue
         rendered = render(translation, bodies)
         pieces.append(text[cursor:start])
-        pieces.append(rendered)
+        pieces.append(f'"{rendered}"')
         cursor = end
         replaced += 1
     pieces.append(text[cursor:])
