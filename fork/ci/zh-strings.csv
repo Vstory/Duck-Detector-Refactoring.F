@@ -1157,3 +1157,43 @@ Raw /dev/__properties__ hole residue means the property storage layout no longer
 "Known virtualization host apps are present on the device, but current process probes did not confirm guest execution.",设备上装有已知的虚拟化宿主应用，但当前进程探测没有确认客户机执行环境。,
 "No direct virtualization signal surfaced from the available probes, but one or more native, preload, helper-process, graphics, namespace, or syscall paths were unavailable.",现有探测没有发现直接的虚拟化信号，但原生、预加载、辅助进程、图形、命名空间或系统调用路径中有一条或多条不可用。,
 "No direct emulator, AVF guest, native-bridge, or cross-process drift artifact surfaced from the current app context.",当前应用上下文中没有出现直接的模拟器、AVF 客户机、原生桥接或跨进程漂移痕迹。,
+Runtime and attested patch levels line up locally.,运行时与证明的补丁级别在本地一致。,tee/rootmanagers 展示文案
+Patch levels drift slightly but stay within a short window.,补丁级别略有偏差，但仍落在较短的窗口内。,tee/rootmanagers 展示文案
+Runtime and attested patch levels drift by more than three months.,运行时与证明的补丁级别相差超过三个月。,tee/rootmanagers 展示文案
+Patch comparison was unavailable.,无法比对补丁级别。,tee/rootmanagers 展示文案
+Attestation aligned; local probes need review,证明一致；本地探针需复核,tee/rootmanagers 展示文案
+Attestation aligned; native probes did not run,证明一致；native 探针未运行,tee/rootmanagers 展示文案
+Local TEE attestation checks aligned,本地 TEE 证明检查一致,tee/rootmanagers 展示文案
+Policy-backed attestation anomalies were detected,检测到由策略支撑的证明异常,tee/rootmanagers 展示文案
+Policy-backed attestation evidence needs review,策略支撑的证明证据需复核,tee/rootmanagers 展示文案
+Hardware-backed local verification was not established,未能建立硬件支撑的本地验证,tee/rootmanagers 展示文案
+Local verification stayed inconclusive,本地验证仍无定论,tee/rootmanagers 展示文案
+{0} Attestation and trust-path checks still aligned.,{0} 证明与信任路径检查仍然一致。,tee/rootmanagers 展示文案
+"Attestation, trust path, and revocation checks line up.",证明、信任路径与吊销检查均一致。,tee/rootmanagers 展示文案
+"Attestation, trust path, and revocation checks line up, but the native process-side probes did not run.",证明、信任路径与吊销检查一致，但 native 进程侧探针没有运行。,tee/rootmanagers 展示文案
+Multiple hard anomaly indicators were raised.,出现多项硬性异常指标。,tee/rootmanagers 展示文案
+Policy-backed review signals suggest further review.,策略支撑的复核信号提示需要进一步复核。,tee/rootmanagers 展示文案
+Local verification could not establish hardware-backed trust.,本地验证无法建立硬件支撑的信任。,tee/rootmanagers 展示文案
+Signals were mixed and did not converge on a stable local result.,信号相互矛盾，未能收敛为稳定的本地结论。,tee/rootmanagers 展示文案
+Collecting local attestation and keystore evidence.,正在收集本地证明与密钥库证据。,tee/rootmanagers 展示文案
+Aligned • local review,一致 • 本地复核,tee/rootmanagers 展示文案
+Aligned • native unavailable,一致 • native 不可用,tee/rootmanagers 展示文案
+Checks aligned,检查一致,tee/rootmanagers 展示文案
+{0} policy anomaly,{0} 项策略异常,tee/rootmanagers 展示文案
+{0} policy review,{0} 项策略复核,tee/rootmanagers 展示文案
+No hardware trust,无硬件信任,tee/rootmanagers 展示文案
+Mixed signals,信号矛盾,tee/rootmanagers 展示文案
+Local trust path:,本地信任路径：,tee/rootmanagers 展示文案
+RKP observed on an invalid local chain,在无效的本地链上观察到 RKP,tee/rootmanagers 展示文案
+"RKP observed, local trust needs review",观察到 RKP，本地信任需复核,tee/rootmanagers 展示文案
+RKP observed,观察到 RKP,tee/rootmanagers 展示文案
+", provisioning needs review",，配置需复核,tee/rootmanagers 展示文案
+{0} policy hard • {1} policy review • {2} local,{0} 项策略硬性 • {1} 项策略复核 • {2} 项本地,tee/rootmanagers 展示文案
+Google root,Google 根证书,tee/rootmanagers 展示文案
+AOSP root,AOSP 根证书,tee/rootmanagers 展示文案
+Factory root,出厂根证书,tee/rootmanagers 展示文案
+{0} matched · {1} apps checked · {2} profile(s) searched,{0} 项匹配 · 已检查 {1} 个应用 · 搜索了 {2} 个配置档,tee/rootmanagers 展示文案
+Identified {0} root manager app(s); at least one disabled its launcher icon and is reachable only through app details. {1},识别到 {0} 个 root 管理器应用；其中至少一个隐藏了桌面图标，只能通过应用详情访问。{1},tee/rootmanagers 展示文案
+"Identified {0} root manager app(s) across {1} profile(s), {2} by a family kernel's manager key.",在 {1} 个配置档中识别到 {0} 个 root 管理器应用，其中 {2} 个由家族内核的管理器 key 判定。,tee/rootmanagers 展示文案
+"Checked {0} app(s) across {1} profile(s), including {2} signing certificates, and matched no root manager app.",已检查 {1} 个配置档中的 {0} 个应用（含 {2} 个签名证书），未命中任何 root 管理器应用。,tee/rootmanagers 展示文案
+"Not scored. An area's mtime moves only when a process takes a write fault on its shared mapping, and it comes from the coarse wall clock, which can still be unset early in boot.",不计入评分。区域的 mtime 只在进程对其共享映射产生写缺页时变化，且取自粗粒度墙上时钟，开机早期可能尚未设置。,tee/rootmanagers 展示文案

@@ -19,6 +19,12 @@ SCAN_ROOTS = (
     "core/ui/src/main",
     "app/src/main",
 )
+# 报告摘要层直接给卡片出 headline/detail，扫不到就是半页英文；其余 data 层是探针日志，
+#   全量扫会把技术串当文案，故只认这几个产出展示文案的文件。
+DATA_COPY_FILES = (
+    "feature/tee/data/src/main/**/report/TeeReportSummaries.kt",
+    "feature/tee/data/src/main/**/report/TeeReportSupport.kt",
+)
 SKIP_DIRECTORIES = {"/build/", "/.gradle/", "/.git/", "/test/", "/androidTest/", "/generated/"}
 
 
@@ -176,8 +182,9 @@ def interpolation_bodies(literal: str) -> list[str]:
 
 def scan_repo(repo: Path):
     """Yield (path, text) for every Kotlin file the overlay may touch."""
-    for root in SCAN_ROOTS:
-        for path in sorted(repo.glob(root + "/**/*.kt")):
+    paths = [path for root in SCAN_ROOTS for path in repo.glob(root + "/**/*.kt")]
+    paths += [path for pattern in DATA_COPY_FILES for path in repo.glob(pattern)]
+    for path in sorted(set(paths)):
             raw = str(path).replace("\\", "/")
             if any(token in "/" + raw for token in SKIP_DIRECTORIES):
                 continue
