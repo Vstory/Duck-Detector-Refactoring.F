@@ -89,9 +89,9 @@ gh api --paginate "${HDR[@]}" "$REL_API" \
       if (code !~ /^[0-9]+$/) next
       if (short !~ /^[0-9a-f]{8}\.apk$/) next
       sub(/\.apk$/, "", short)
-      # 末列 = 组内序（debug 先）：同一组的两个变体共用一个组键，只按组键排会让 release
-      #   排到 debug 前面，与脚注「排障优先用 debug」相反。
-      printf "%s|%s\t%s\t%s\t%s\t%s\t%s\t%d\n", code, short, name, id, ver, var, size, (var == "debug" ? 0 : 1)
+      # 末列 = 组内序（release 先）：同一组的两个变体共用一个组键，只按组键排则组内顺序
+      #   取决于上传先后；release 是日常用包，固定排在 debug 上面。
+      printf "%s|%s\t%s\t%s\t%s\t%s\t%s\t%d\n", code, short, name, id, ver, var, size, (var == "release" ? 0 : 1)
     }' > "$SNAP"
 echo "匹配命名规则的 asset 共 $(wc -l < "$SNAP") 个"
 sort -t$'\t' -k1,1nr -k7,7n "$SNAP" > "$SORTED"
