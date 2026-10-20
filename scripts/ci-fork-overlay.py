@@ -9,6 +9,7 @@ the upstream build-logic already reads, so no upstream build file is touched.
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -37,6 +38,9 @@ LAUNCH_META_TO = LAUNCH_META_FROM + """
                 android:name="com.eltavine.duckdetector.launch_activity"
                 android:value="com.eltavine.duckdetector.MainActivity" />"""
 
+ZH_EXTRA = "fork/ci/zh-extra.tsv"
+ZH_LOCALE = "values-zh-rCN"
+
 APP_NAME_GLOB = "core/ui/src/main/res/values*/mainscreen_strings.xml"
 APP_NAME_FROM = ">Duck Detector<"
 APP_NAME_TO = ">Duck Detector.F<"
@@ -48,6 +52,49 @@ def replace_once(path: Path, old: str, new: str) -> bool:
         return False
     path.write_text(text.replace(old, new, 1), encoding="utf-8")
     return True
+
+
+def xml_escape(value: str) -> str:
+    return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def apply_zh_extra(repo: Path, check: bool) -> int:
+    """上游有一半模块带了中文资源、一半没带，缺的那部分由 fork/ci/zh-extra.tsv 补。"""
+    groups: dict[tuple[str, str], dict[str, str]] = {}
+    for line in (repo / ZH_EXTRA).read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        mod, fname, name, value = line.split("\t")
+        groups.setdefault((mod, fname), {})[name] = value
+
+    added = 0
+    for (mod, fname), entries in groups.items():
+        target = repo / mod / ZH_LOCALE / fname
+        if target.exists():
+            text = target.read_text(encoding="utf-8")
+            present = set(re.findall(r'<string name="([^"]+)"', text))
+            missing = {n: v for n, v in entries.items() if n not in present}
+            if not missing:
+                continue
+            block = "".join(
+                f'    <string name="{n}">{xml_escape(v)}</string>\n' for n, v in missing.items()
+            )
+            text = text.replace("</resources>", block + "</resources>")
+            if not check:
+                target.write_text(text, encoding="utf-8")
+            added += len(missing)
+        else:
+            body = "".join(
+                f'    <string name="{n}">{xml_escape(v)}</string>\n' for n, v in entries.items()
+            )
+            text = f'<?xml version="1.0" encoding="utf-8"?>\n<resources>\n{body}</resources>\n'
+            if not check:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(text, encoding="utf-8")
+            added += len(entries)
+
+    print(f"✅ 中文资源补齐（{ZH_LOCALE}，{added} 条{'，dry run' if check else ''}）")
+    return 0
 
 
 def main() -> int:
@@ -88,6 +135,8 @@ def main() -> int:
     manifest = repo / MANIFEST
     if "com.eltavine.duckdetector.launch_activity" not in manifest.read_text(encoding="utf-8"):
         replace_once(manifest, LAUNCH_META_FROM, LAUNCH_META_TO)
+
+    apply_zh_extra(repo, args.check)
 
     renamed = 0
     for strings in repo.glob(APP_NAME_GLOB):

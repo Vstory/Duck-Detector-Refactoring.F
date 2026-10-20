@@ -1,0 +1,213 @@
+app/src/main/res	mainscreen_strings.xml	dashboard_info_card	信息卡片
+app/src/main/res	mainscreen_strings.xml	dashboard_system_time	系统时间
+app/src/main/res	mainscreen_strings.xml	dashboard_additional	更多
+app/src/main/res	mainscreen_strings.xml	dashboard_detectors	检测项
+app/src/main/res	mainscreen_strings.xml	card_action_view_details	查看详情
+app/src/main/res	mainscreen_strings.xml	card_action_review_evidence	复核证据
+app/src/main/res	mainscreen_strings.xml	card_action_certificate_chain	证书链
+app/src/main/res	strings.xml	startup_preparing_detail	正在加载协议状态，以便完成启动策略复核。
+core/ui/src/main/res	mainscreen_strings.xml	card_collapse	收起卡片
+core/ui/src/main/res	mainscreen_strings.xml	card_expand	展开卡片
+core/ui/src/main/res	mainscreen_strings.xml	status_all_clear	正常
+core/ui/src/main/res	mainscreen_strings.xml	status_danger	危险
+core/ui/src/main/res	mainscreen_strings.xml	status_info	提示
+core/ui/src/main/res	mainscreen_strings.xml	status_info_error	错误
+core/ui/src/main/res	mainscreen_strings.xml	status_info_support	支持
+core/ui/src/main/res	mainscreen_strings.xml	status_warning	警告
+core/ui/src/main/res	mainscreen_strings.xml	app_name	Duck Detector.F
+core/ui/src/main/res	strings.xml	severity_high	高
+core/ui/src/main/res	strings.xml	severity_medium	中
+feature/bootloader/ui/src/main/res	mainscreen_strings.xml	bootloader_widevine_consistency_review	Widevine 一致性需复核
+feature/bootloader/ui/src/main/res	strings.xml	bootloader_section_boot_state	启动状态
+feature/bootloader/ui/src/main/res	strings.xml	bootloader_section_attestation	证明
+feature/bootloader/ui/src/main/res	strings.xml	bootloader_section_boot_properties	启动属性
+feature/bootloader/ui/src/main/res	strings.xml	bootloader_section_consistency	一致性
+feature/bootloader/ui/src/main/res	strings.xml	bootloader_section_impact	影响
+feature/bootloader/ui/src/main/res	strings.xml	bootloader_section_detection_methods	检测方法
+feature/bootloader/ui/src/main/res	strings.xml	bootloader_section_scan_summary	扫描摘要
+feature/customrom/ui/src/main/res	strings.xml	customrom_section_build_signals	构建信号
+feature/customrom/ui/src/main/res	strings.xml	customrom_section_runtime_signals	运行时信号
+feature/customrom/ui/src/main/res	strings.xml	customrom_section_framework_traces	框架痕迹
+feature/customrom/ui/src/main/res	strings.xml	customrom_section_impact	影响
+feature/customrom/ui/src/main/res	strings.xml	customrom_section_detection_methods	检测方法
+feature/customrom/ui/src/main/res	strings.xml	customrom_section_scan_summary	扫描摘要
+feature/dangerousapps/ui/src/main/res	strings.xml	target_app_list_title	目标应用列表
+feature/dangerousapps/ui/src/main/res	strings.xml	target_app_list_summary	该检测项当前使用的旧版危险应用清单。
+feature/dangerousapps/ui/src/main/res	strings.xml	target_app_list_targets	目标
+feature/dangerousapps/ui/src/main/res	strings.xml	target_app_list_categories	分类
+feature/dangerousapps/ui/src/main/res	strings.xml	target_app_list_close	关闭
+feature/dangerousapps/ui/src/main/res	strings.xml	target_app_list_view	查看目标应用（%1$d）
+feature/dangerousapps/ui/src/main/res	strings.xml	target_app_list_overview	概览
+feature/dangerousapps/ui/src/main/res	strings.xml	dangerousapps_section_packages	包
+feature/dangerousapps/ui/src/main/res	strings.xml	dangerousapps_section_context	上下文
+feature/dangerousapps/ui/src/main/res	strings.xml	dangerousapps_section_package_history	开机以来的包变化
+feature/dangerousapps/ui/src/main/res	strings.xml	dangerousapps_no_package_hits	未命中包
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_export_report_hint	点击导出完整报告
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_report_saved	报告已保存
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_report_save_failed	保存失败：%1$s
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_report_save_failed_unknown	保存失败
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_build_time_utc	构建（UTC）· %1$s
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_loading_title	正在执行本地检查
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_loading_summary	各检测卡片收集完证据后，主页摘要才会显示。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_severity_high	高
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_severity_medium	中
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_severity_check	检查
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_severity_clear	正常
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_version_label	%1$s（%2$d）
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_security_overview	安全概览
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_scan_completed_title	扫描于 %1$s\n总耗时 %2$s
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_duration_ms	%1$s 毫秒
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_duration_seconds	%1$s 秒
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_focus_pair	%1$s 与 %2$s
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_headline_danger	危险
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_headline_warning	警告
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_headline_info	提示
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_headline_ready	就绪
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_headline_pending	等待中
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_headline_ok	正常
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_summary_danger	先看 %1$s。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_summary_warning	接着复核 %1$s。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_summary_info	%1$s 需要更多上下文才能判定为正常。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_summary_ready	本地检查完成后，检测卡片会陆续填充。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_summary_pending	其余模块仍在收集本地证据。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_summary_ok	用下方检测卡片查看详细的本地证据。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_metric_danger	危险
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_metric_warning	警告
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_metric_ready	就绪
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_metric_pending	等待中
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_finding_scan_status_title	扫描状态
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_finding_scan_status_headline	正在等待检测证据
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_finding_scan_status_detail	模块收集完本地证据后，检测卡片会展开。
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_finding_overview_title	概览
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_finding_overview_headline	已就绪的模块没有紧急问题
+feature/dashboard/ui/src/main/res	strings.xml	dashboard_finding_overview_detail	展开下方检测卡片，查看详细的本地证据与二次校验。
+feature/kernelcheck/ui/src/main/res	strings.xml	kernelcheck_section_identity	内核标识
+feature/kernelcheck/ui/src/main/res	strings.xml	kernelcheck_section_anomalies	异常
+feature/kernelcheck/ui/src/main/res	strings.xml	kernelcheck_section_behavior	内核行为
+feature/kernelcheck/ui/src/main/res	strings.xml	kernelcheck_section_impact	影响
+feature/kernelcheck/ui/src/main/res	strings.xml	kernelcheck_section_detection_methods	检测方法
+feature/kernelcheck/ui/src/main/res	strings.xml	kernelcheck_section_scan_summary	扫描摘要
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_runtime_checks	运行时检查
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_binder_services	Binder 与服务
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_packages_modules	包与模块
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_selinux_policy	SELinux 策略
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_native_traces	native 痕迹
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_impact	影响
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_detection_methods	检测方法
+feature/lsposed/ui/src/main/res	strings.xml	lsposed_section_scan_summary	扫描摘要
+feature/memory/ui/src/main/res	strings.xml	memory_section_function_hooks	函数 Hook
+feature/memory/ui/src/main/res	strings.xml	memory_section_mappings_fd_code	映射与 FD 代码
+feature/memory/ui/src/main/res	strings.xml	memory_section_loader_visibility	加载器可见性
+feature/memory/ui/src/main/res	strings.xml	memory_section_impact	影响
+feature/memory/ui/src/main/res	strings.xml	memory_section_detection_methods	检测方法
+feature/memory/ui/src/main/res	strings.xml	memory_section_scan_summary	扫描摘要
+feature/mount/ui/src/main/res	strings.xml	mount_diagnostic_clipboard_label	跨进程挂载视图详情
+feature/mount/ui/src/main/res	strings.xml	mount_section_isolated_process	隔离进程挂载
+feature/mount/ui/src/main/res	strings.xml	mount_section_root_artifacts	root 残留
+feature/mount/ui/src/main/res	strings.xml	mount_section_runtime_mounts	运行时挂载
+feature/mount/ui/src/main/res	strings.xml	mount_section_filesystem	文件系统
+feature/mount/ui/src/main/res	strings.xml	mount_section_namespace_consistency	命名空间与一致性
+feature/mount/ui/src/main/res	strings.xml	mount_section_impact	影响
+feature/mount/ui/src/main/res	strings.xml	mount_section_detection_methods	检测方法
+feature/mount/ui/src/main/res	strings.xml	mount_section_scan_summary	扫描摘要
+feature/playintegrityfix/ui/src/main/res	strings.xml	playintegrityfix_section_spoof_properties	伪造属性
+feature/playintegrityfix/ui/src/main/res	strings.xml	playintegrityfix_section_cross_source_consistency	跨来源一致性
+feature/playintegrityfix/ui/src/main/res	strings.xml	playintegrityfix_section_runtime_traces	运行时痕迹
+feature/playintegrityfix/ui/src/main/res	strings.xml	playintegrityfix_section_impact	影响
+feature/playintegrityfix/ui/src/main/res	strings.xml	playintegrityfix_section_detection_methods	检测方法
+feature/playintegrityfix/ui/src/main/res	strings.xml	playintegrityfix_section_scan_summary	扫描摘要
+feature/rootmanagers/ui/src/main/res	strings.xml	root_managers_section_matches	命中的 root 管理器
+feature/rootmanagers/ui/src/main/res	strings.xml	root_managers_section_profiles	配置档
+feature/rootmanagers/ui/src/main/res	strings.xml	root_managers_section_scan	扫描
+feature/rootmanagers/ui/src/main/res	strings.xml	root_managers_diagnostic_clipboard_label	Root 管理器诊断详情
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_title	实验性权限归属探测
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_headline	查找残留的 root 管理器权限名
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_detail	执行一次设计为被拒绝的安装检查。需要已有的安装授权，且可能受设备限制。命中说明找到了权限归属者，不代表已取得 root 权限。
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_allow	启用可选检查
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_decline	保持禁用
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_granted	已启用可选安装检查
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_disabled	已禁用
+feature/rootmanagers/ui/src/main/res	strings.xml	installer_canary_declined_detail	包与签名证书检查仍然可用。
+feature/selinux/ui/src/main/res	strings.xml	selinux_section_security_state	安全状态
+feature/selinux/ui/src/main/res	strings.xml	selinux_section_impact	影响
+feature/selinux/ui/src/main/res	strings.xml	selinux_section_detection_methods	检测方法
+feature/selinux/ui/src/main/res	strings.xml	selinux_section_policy_analysis	策略分析
+feature/selinux/ui/src/main/res	strings.xml	selinux_section_audit_integrity	审计完整性
+feature/selinux/ui/src/main/res	strings.xml	selinux_section_device_info	设备信息
+feature/selinux/ui/src/main/res	strings.xml	selinux_section_reference	参考
+feature/settings/ui/src/main/res	strings.xml	author_summary_947409161	乌克兰语翻译
+feature/settings/ui/src/main/res	strings.xml	author_summary_alex	SELinux（C++、Kotlin）
+feature/settings/ui/src/main/res	strings.xml	author_summary_coolzyd	内核检测
+feature/settings/ui/src/main/res	strings.xml	author_summary_default	贡献者
+feature/settings/ui/src/main/res	strings.xml	author_summary_hsskyboy	仓库修复、内核检测
+feature/settings/ui/src/main/res	strings.xml	author_summary_lingqing	TEE
+feature/settings/ui/src/main/res	strings.xml	author_summary_mirin	界面
+feature/settings/ui/src/main/res	strings.xml	author_summary_searchur	主页、危险应用与 Zygisk
+feature/settings/ui/src/main/res	strings.xml	author_summary_sqmy	Kotlin
+feature/settings/ui/src/main/res	strings.xml	author_summary_victor	CI
+feature/settings/ui/src/main/res	strings.xml	author_summary_wuying	验证了「KSU 王座猎杀」行为检测方案的可行性
+feature/settings/ui/src/main/res	strings.xml	author_summary_zg089	阿拉伯语翻译
+feature/su/ui/src/main/res	strings.xml	su_section_root_artifacts	root 残留
+feature/su/ui/src/main/res	strings.xml	su_section_native_context	native 上下文
+feature/su/ui/src/main/res	strings.xml	su_section_impact	影响
+feature/su/ui/src/main/res	strings.xml	su_section_detection_methods	检测方法
+feature/su/ui/src/main/res	strings.xml	su_section_scan_summary	扫描摘要
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_security_runtime	安全与运行时
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_verified_boot	验证启动
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_build_profile	构建档案
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_source_consistency	来源一致性
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_cross_check_rules	交叉校验规则
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_device_info	设备信息
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_impact	影响
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_detection_methods	检测方法
+feature/systemproperties/ui/src/main/res	strings.xml	systemproperties_section_scan_summary	扫描摘要
+feature/tee/ui/src/main/res	strings.xml	tee_dialog_close	关闭
+feature/tee/ui/src/main/res	strings.xml	tee_details_title	TEE 详情
+feature/tee/ui/src/main/res	strings.xml	tee_details_summary	用于调试、分享与人工核验的结构化导出。
+feature/tee/ui/src/main/res	strings.xml	tee_details_snapshot_title	当前证明快照
+feature/tee/ui/src/main/res	strings.xml	tee_details_snapshot_summary	查看当前的证明导出，用于调试、分享证据与人工核验。
+feature/tee/ui/src/main/res	strings.xml	tee_details_metric_lines	行数
+feature/tee/ui/src/main/res	strings.xml	tee_details_metric_certificates	证书
+feature/tee/ui/src/main/res	strings.xml	tee_details_no_export	暂无可导出内容
+feature/tee/ui/src/main/res	strings.xml	tee_details_no_export_summary	完成一次完整证明流程后重新运行检测，即可填充原始 TEE 报告。
+feature/tee/ui/src/main/res	strings.xml	tee_details_no_export_summary_short	完成一次完整证明流程后重新运行检测。
+feature/tee/ui/src/main/res	strings.xml	tee_details_report_body	规范化报告正文
+feature/tee/ui/src/main/res	strings.xml	tee_details_report_body_summary	便于查看与复制粘贴。
+feature/tee/ui/src/main/res	strings.xml	tee_details_report_body_summary_selectable	可选择、便于查看与复制粘贴的规范化文本。
+feature/tee/ui/src/main/res	strings.xml	tee_details_section_overview	概览
+feature/tee/ui/src/main/res	strings.xml	tee_details_section_report	报告
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_chain_title	证书链
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_chain_summary	本次扫描暴露的证明证书。
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_none_available	暂无证书
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_none_available_summary	本次扫描没有暴露有效的证明证书链。
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_chain_overview	链概览
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_chain_order	顺序
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_chain_order_leaf_root	叶 → 根
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_count	%1$s 张证书
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_leaf	叶证书
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_root	根证书
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_none	无
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_section_identity	标识
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_section_crypto	加密
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_section_validity	有效期
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_field_subject	主题
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_field_issuer	签发者
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_field_serial_number	序列号
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_field_public_key	公钥
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_field_signature_algorithm	签名算法
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_field_active_window	有效窗口
+feature/tee/ui/src/main/res	strings.xml	tee_certificate_active_window_value	%1$s 至 %2$s
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_environment	环境
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_runtime	运行时
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_consistency	一致性
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_honeypots	蜜罐
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_host_apps	宿主应用
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_impact	影响
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_detection_methods	检测方法
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_scan_state	扫描状态
+feature/virtualization/ui/src/main/res	strings.xml	virtualization_section_references	参考
+feature/zygisk/ui/src/main/res	strings.xml	zygisk_section_security_state	安全状态
+feature/zygisk/ui/src/main/res	strings.xml	zygisk_section_impact	影响
+feature/zygisk/ui/src/main/res	strings.xml	zygisk_section_detection_methods	检测方法
+feature/zygisk/ui/src/main/res	strings.xml	zygisk_section_signals	信号
+feature/zygisk/ui/src/main/res	strings.xml	zygisk_section_references	参考
