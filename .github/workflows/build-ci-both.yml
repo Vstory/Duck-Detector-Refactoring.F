@@ -12,9 +12,9 @@
 #     ④ 构建环境直接复用上游 `.github/actions/setup-android-build`（它按 gradle.properties
 #        里钉死的 JDK / SDK / NDK / build-tools 装），不在这里另写一份版本号。
 # ══════════════════════════════════════════════════════════════════════════════
-name: Build · CI Both
+name: Build · CI · Both
 
-run-name: "Build · CI Both · ${{ github.ref_name }}"
+run-name: "Build · CI · Both · ${{ github.ref_name }}"
 
 on:
   push:
